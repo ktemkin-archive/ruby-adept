@@ -12,7 +12,23 @@ module Adept
     class Device < FFI::Struct
       layout  :name,        [:char, NameMaxLength], #char[NameMaxLength]
               :connection,  [:char, PathMaxLength], #char[PathMaxLength]
-              :dtp,         :ulong
+              :transport,   :ulong
+
+      #
+      #Convert the given device record into a ruby hash.
+      #TODO: possibly decode the trasnport type?
+      #
+      def to_h
+        result = Hash[members.zip(values)]
+
+        #Convert the internal character arrays to ruby strings.
+        result[:name] = result[:name].to_s
+        result[:connection] = result[:connection].to_s
+
+        #return the resultant hash
+        result
+      end
+
     end
 
   end

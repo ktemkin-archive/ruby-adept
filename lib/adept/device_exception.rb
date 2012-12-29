@@ -7,13 +7,17 @@ module Adept
   #
   class DeviceError < StandardError
 
+    attr_accessor :short_name
+
     def initialize(message, short_name, code=nil)
       @short_name = short_name
       @code = code
+      
+      super(message)
     end
 
-    def self.const_missing(sym)
-      self.send(sym)
+    def to_s
+      "#@short_name (#@code) : #{super}"
     end
 
   end
