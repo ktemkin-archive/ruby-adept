@@ -1,6 +1,4 @@
 
-require 'adept/device_exception'
-
 require 'adept/lowlevel'
 require 'adept/lowlevel/device_manager'
 

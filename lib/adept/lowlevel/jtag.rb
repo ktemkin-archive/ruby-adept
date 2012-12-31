@@ -19,10 +19,10 @@ module Adept
       #
 
       #Determines the number of JTAG ports that the given device provides.
-      attach_function :DjtgGetPortCount, [:ulong, :pointer], :bool
+      attach_adept_function :GetPortCount, [:ulong, :pointer]
 
       #Determines which interfaces the given JTAG port provides.
-      attach_function :DjtgGetPortProperties, [:ulong, :int32, :pointer], :bool
+      attach_adept_function :GetPortProperties, [:ulong, :int32, :pointer]
 
       #Bit numbers for the call support functions.
       SUPPORTS_SET_SPEED = 0
@@ -38,7 +38,8 @@ module Adept
         count_pointer = FFI::MemoryPointer.new(:int32)
         
         #... and fill it with the number of available JTAG ports.
-        DjtgGetPortCount(device.handle, count_pointer)
+        GetPortCount(device.handle, count_pointer)
+
 
         #Return the acquired count as a ruby integer.
         count_pointer.get_int32(0)
@@ -65,7 +66,7 @@ module Adept
         properties_pointer = FFI::MemoryPointer.new(:ulong)
 
         #... and fill it with a bit-vector indicates supports for various system calls.
-        DjtgGetPortProperties(device.handle, port_number, properties_pointer)
+        GetPortProperties(device.handle, port_number, properties_pointer)
 
         #Extract the property bit-vector from the 
         properties = properties_pointer.get_ulong(0)
@@ -83,20 +84,20 @@ module Adept
       # 
       
       #Enable the JTAG port with the given number. Only one JTAG device can be active at a time!
-      attach_function :DjtgEnableEx, [:ulong, :int32], :bool
+      attach_adept_function :EnableEx, [:ulong, :int32]
 
       #Disable the currently active JTAG port.
-      attach_function :DjtgDisable, [:ulong], :bool
+      attach_adept_function :Disable, [:ulong]
 
       #
       # JTAG 
       #
       
-      attach_function :DjtgPutTdiBits, [:ulong, :bool, :pointer, :pointer, :ulong, :bool], :bool
-      attach_function :DjtgPutTmsBits, [:ulong, :bool, :pointer, :pointer, :ulong, :bool], :bool
-      attach_function :DjtgPutTmsTdiBits, [:ulong, :pointer, :pointer, :ulong, :bool], :bool
-      attach_function :DjtgGetTdoBits, [:ulong, :bool, :bool, :pointer, :ulong, :bool], :bool
-      attach_function :DjtgClockTck, [:ulong, :bool, :bool, :ulong, :bool], :bool
+      attach_adept_function :PutTdiBits, [:ulong, :bool, :pointer, :pointer, :ulong, :bool]
+      attach_adept_function :PutTmsBits, [:ulong, :bool, :pointer, :pointer, :ulong, :bool]
+      attach_adept_function :PutTmsTdiBits, [:ulong, :pointer, :pointer, :ulong, :bool]
+      attach_adept_function :GetTdoBits, [:ulong, :bool, :bool, :pointer, :ulong, :bool]
+      attach_adept_function :ClockTck, [:ulong, :bool, :bool, :ulong, :bool]
 
       # 
       # //overlapped functions

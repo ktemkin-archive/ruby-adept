@@ -15,48 +15,16 @@ module Adept
       #Wrap the device manager library, libDMGR
       wrap_adept_library 'dmgr'
 
-      #
-      # Error handling functions.
-      #
-
-      #Get the most recent error code.
-      attach_function :DmgrGetLastError, [], :int
-      attach_function :DmgrSzFromErc, [:int, :pointer, :pointer], :void
-
-      #
-      # Returns a DeviceError which encapsulates the most recent error,
-      # in a format which can be easily raised.
-      #
-      def self.last_error
-
-        #get the error code most recently seen by the device manager API.
-        code = DeviceManager::DmgrGetLastError()
-
-        #if no error has occurred, return nil.
-        return nil if code.zero?
-    
-        #Create space for the error name and message...
-        error_name = FFI::MemoryPointer.new(ErrorNameMaxLength)
-        error_message = FFI::MemoryPointer.new(ErrorMessageMaxLength)
-
-        #... and populate those spaces with the relevant error information.
-        DeviceManager::DmgrSzFromErc(code, error_name, error_message)
-
-        #Convert the error information into a DeviceError.
-        LowLevelDeviceError.new(error_message.read_string, error_name.read_string, code)
-
-      end
-
 
       #
       # Enumeration functions.
       #
 
       #Get the list of all detected Adept devices; should be followed by the accompanying FreeDvcEnum call.
-      attach_function :DmgrEnumDevices, [:pointer], :void
+      attach_adept_function :EnumDevices, [:pointer]
 
       #Free the internal list of connected devices.
-      attach_function :DmgrFreeDvcEnum, [], :void
+      attach_adept_function :FreeDvcEnum, []
 
 
       #
@@ -69,7 +37,7 @@ module Adept
         count_pointer = FFI::MemoryPointer.new(:int)
         
         #Enumerate all of the connected devices, and retrieve the amount of enumerated devices.
-        DmgrEnumDevices(count_pointer)
+        EnumDevices(count_pointer)
 
         #Dereference the count pointer, extracting the number of devices present.
         count_pointer.get_int(0)
@@ -80,7 +48,7 @@ module Adept
       # Free the internal list of connected devices.
       #
       def self.free_device_list
-        DmgrFreeDvcEnum()
+        FreeDvcEnum()
       end
 
 
@@ -89,7 +57,7 @@ module Adept
       #
       
       #Get all enumeration information regarding the current device.
-      attach_function :DmgrGetDvc, [:int, :pointer], :void
+      attach_adept_function :GetDvc, [:int, :pointer]
 
       #
       # Returns a single record from the internal device enumeration list.
@@ -101,7 +69,7 @@ module Adept
         device = Device.new
 
         #Get the device's information from the internal enumeration table.
-        DmgrGetDvc(device_number, device.pointer)
+        GetDvc(device_number, device.pointer)
 
         #And return the newly-fetched device object as a ruby hash.
         device.to_h
@@ -113,10 +81,10 @@ module Adept
       #
       
       #Open the device at the specified path.
-      attach_function :DmgrOpen, [:pointer, :string], :void
+      attach_adept_function :Open, [:pointer, :string]
 
       #Close the device with the specified handle.
-      attach_function :DmgrClose, [:ulong], :void
+      attach_adept_function :Close, [:ulong]
 
       #
       # Opens the device at the given path, and returns an interface handle.
@@ -127,7 +95,7 @@ module Adept
         handle_pointer = FFI::MemoryPointer.new(:ulong)
 
         #Open the device at the given path, retrieving the newly-created device handle.
-        DmgrOpen(handle_pointer, path)
+        Open(handle_pointer, path)
 
         #Dereference the handle pointer, retrieving the handle itself.
         handle = handle_pointer.get_ulong(0)
@@ -142,7 +110,7 @@ module Adept
       # Closes the device which is referenced by the given interface handle.
       #
       def self.close_device(handle)
-        DmgrClose(handle)
+        Close(handle)
       end
 
 
