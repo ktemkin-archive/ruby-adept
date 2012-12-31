@@ -53,7 +53,7 @@ module Adept
           unless base_function.call(*args)
           
             #Get the most recent error information as a raisable exception.
-            error =  ErrorHandler.last_error
+            error = ErrorHandler.last_error
 
             #Override the exception's backtrace so it doesn't include this anonymous singleton.
             error.set_backtrace(caller(2))
