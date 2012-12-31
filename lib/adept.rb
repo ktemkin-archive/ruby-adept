@@ -1,5 +1,9 @@
 require "adept/version"
 
-module Adept
-  # Your code goes here...
-end
+#Pull in the low-level interface.
+#TODO: comment out, eventually?
+require 'adept/lowlevel'
+require 'adept/lowlevel/device_manager'
+require 'adept/lowlevel/jtag'
+
+require 'adept/device'

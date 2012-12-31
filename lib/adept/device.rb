@@ -16,10 +16,12 @@ module Adept
 
     #Allow Device connections to be created with an open function,
     #like Ruby I/O objects.
-    alias :new :open
+    class << self
+      alias :open :new
+    end
 
     #Allow access to the device's handle, for now.
-    attr_accessor :handle
+    attr_reader :handle
 
 
     #
@@ -35,7 +37,7 @@ module Adept
       return nil if target_device.nil?
 
       #Return a new connection to the target device.
-      self.new(target_device[:connection])
+      self.new(target_device[:path])
 
     end
 
@@ -50,7 +52,7 @@ module Adept
 
       #If we didn't get a valid handle, raise the relevant exception.
       if @handle.nil?
-        raise self.class.last_error
+        raise DeviceManager::last_error
       end
 
     end

@@ -1,5 +1,6 @@
 require 'ffi'
 require 'adept/lowlevel/device'
+require 'adept/lowlevel/adept_library'
 
 module Adept
   module LowLevel
@@ -9,34 +10,10 @@ module Adept
     # Wrapper for the low-level Adept device management functionality.
     #
     module DeviceManager
-      extend FFI::Library
+      extend AdeptLibrary
 
       #Wrap the device manager library, libDMGR
-      ffi_lib 'libdmgr'
-
-      #
-      # Meta-information functions.
-      #
-
-      #Get the device manager's runtime verison.
-      attach_function :DmgrGetVersion, [:pointer], :void
-
-      #
-      # Returns the version of the Adept Device Manager runtime, as a string.
-      #
-      def self.runtime_version
-        
-        #create a new buffer which will hold the runtime's version
-        version_buffer = FFI::MemoryPointer.new(VersionMaxLength) 
-
-        #get the system's version
-        DeviceManager::DmgrGetVersion(version_buffer)
-
-        #and return the retrieved version
-        version_buffer.read_string
-
-      end
-
+      wrap_adept_library 'dmgr'
 
       #
       # Error handling functions.

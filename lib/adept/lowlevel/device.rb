@@ -11,7 +11,7 @@ module Adept
     #
     class Device < FFI::Struct
       layout  :name,        [:char, NameMaxLength], #char[NameMaxLength]
-              :connection,  [:char, PathMaxLength], #char[PathMaxLength]
+              :path,  [:char, PathMaxLength], #char[PathMaxLength]
               :transport,   :ulong
 
       #
@@ -23,7 +23,7 @@ module Adept
 
         #Convert the internal character arrays to ruby strings.
         result[:name] = result[:name].to_s
-        result[:connection] = result[:connection].to_s
+        result[:path] = result[:path].to_s
 
         #return the resultant hash
         result
