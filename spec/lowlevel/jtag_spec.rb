@@ -44,12 +44,12 @@ describe LowLevel::JTAG do
   end
 
   it "should be able to open a JTAG connection to the FPGA on a Basys 2" do
-    LowLevel::JTAG.DjtgEnableEx(@device.handle, 0)
+    LowLevel::JTAG.EnableEx(@device.handle, 0)
   end
 
   it "should be able to _close_ a JTAG connection" do
-    LowLevel::JTAG.DjtgEnableEx(@device.handle, 0)
-    LowLevel::JTAG.DjtgDisable(@device.handle)
+    LowLevel::JTAG.EnableEx(@device.handle, 0)
+    LowLevel::JTAG.Disable(@device.handle)
   end
 
   

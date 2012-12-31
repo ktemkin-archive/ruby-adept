@@ -42,6 +42,9 @@ module Adept
         #Attach the library's version of the function...
         base_function = attach_function base_name, arguments, :bool
 
+        #Make the base function protected, as not to clutter the (public) namespace.
+        private_class_method(base_name)
+
         #And create our enhanced version of the function, 
         #which automatically raises an exception if an error occurs.
         define_singleton_method(name) do |*args|
