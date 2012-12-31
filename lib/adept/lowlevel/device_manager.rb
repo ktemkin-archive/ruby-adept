@@ -12,7 +12,7 @@ module Adept
       extend FFI::Library
 
       #Wrap the device manager library, libDMGR
-      ffi_lib 'libdmgr.so'
+      ffi_lib 'libdmgr'
 
       #
       # Meta-information functions.
@@ -22,12 +22,54 @@ module Adept
       attach_function :DmgrGetVersion, [:pointer], :void
 
       #
+      # Returns the version of the Adept Device Manager runtime, as a string.
+      #
+      def self.runtime_version
+        
+        #create a new buffer which will hold the runtime's version
+        version_buffer = FFI::MemoryPointer.new(VersionMaxLength) 
+
+        #get the system's version
+        DeviceManager::DmgrGetVersion(version_buffer)
+
+        #and return the retrieved version
+        version_buffer.read_string
+
+      end
+
+
+      #
       # Error handling functions.
       #
 
       #Get the most recent error code.
       attach_function :DmgrGetLastError, [], :int
       attach_function :DmgrSzFromErc, [:int, :pointer, :pointer], :void
+
+      #
+      # Returns a DeviceError which encapsulates the most recent error,
+      # in a format which can be easily raised.
+      #
+      def self.last_error
+
+        #get the error code most recently seen by the device manager API.
+        code = DeviceManager::DmgrGetLastError()
+
+        #if no error has occurred, return nil.
+        return nil if code.zero?
+    
+        #Create space for the error name and message...
+        error_name = FFI::MemoryPointer.new(ErrorNameMaxLength)
+        error_message = FFI::MemoryPointer.new(ErrorMessageMaxLength)
+
+        #... and populate those spaces with the relevant error information.
+        DeviceManager::DmgrSzFromErc(code, error_name, error_message)
+
+        #Convert the error information into a DeviceError.
+        LowLevelDeviceError.new(error_message.read_string, error_name.read_string, code)
+
+      end
+
 
       #
       # Enumeration functions.

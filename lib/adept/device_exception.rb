@@ -5,7 +5,7 @@ module Adept
   # Wrapper for Digilent Device Manager errors, which allows
   # errors raised from the low-level SDK to be handled like ruby exceptions.
   #
-  class DeviceError < StandardError
+  class LowLevelDeviceError < StandardError
 
     attr_accessor :short_name
 

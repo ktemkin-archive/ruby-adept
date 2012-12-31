@@ -4,31 +4,16 @@ require 'ffi'
 module Adept
   module LowLevel
 
+    #
+    # Constants; taken directly from the Digilent header file 'dpcdecl.h'.
+    #
+    
+    #Maximum possible length of a library version string.
     VersionMaxLength = 256
 
+    #Maximum length of an error messsage's shortname and description.
     ErrorNameMaxLength = 16
     ErrorMessageMaxLength = 128
-
-    #
-    # Creates a string buffer suitable for storing runtime version information.
-    #
-    def self.create_version_buffer
-      FFI::MemoryPointer.new(VersionMaxLength)
-    end
-
-    #
-    # Creates a string buffer suitable for storing error names.
-    #
-    def self.create_error_name_buffer
-      FFI::MemoryPointer.new(ErrorNameMaxLength)
-    end
-
-    #
-    # Creates a FFI string buffer suitable for storing error messages.
-    #
-    def self.create_error_message_buffer
-      FFI::MemoryPointer.new(ErrorMessageMaxLength)
-    end
 
   end
 end

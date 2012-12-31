@@ -16,7 +16,7 @@ module Adept
 
       #
       #Convert the given device record into a ruby hash.
-      #TODO: possibly decode the trasnport type?
+      #TODO: possibly decode the transport type?
       #
       def to_h
         result = Hash[members.zip(values)]
