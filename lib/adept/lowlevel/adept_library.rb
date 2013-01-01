@@ -5,6 +5,9 @@ require 'adept/lowlevel/error_handler'
 module Adept
   module LowLevel
 
+    #Maximum possible length of a library version string.
+    VersionMaxLength = 256
+
     #
     # "Base" module, which provides functionality for interfacing with 
     # Digilent Adept low-level libraries.

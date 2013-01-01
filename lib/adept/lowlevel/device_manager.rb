@@ -5,6 +5,8 @@ require 'adept/lowlevel/adept_library'
 module Adept
   module LowLevel
 
+    TRANSPORT_MAX_LENGTH = 16
+
     #
     # DeviceManager (DMGR)
     # Wrapper for the low-level Adept device management functionality.
@@ -59,6 +61,9 @@ module Adept
       #Get all enumeration information regarding the current device.
       attach_adept_function :GetDvc, [:int, :pointer]
 
+      #Get a string describing the transport 
+      attach_adept_function :GetDtpString, [:ulong, :pointer]
+
       #
       # Returns a single record from the internal device enumeration list.
       # This record contains low-level information about how to connect to the device.
@@ -73,6 +78,22 @@ module Adept
 
         #And return the newly-fetched device object as a ruby hash.
         device.to_h
+
+      end
+
+      #
+      # Returns the transport name for a given transport ID ("DTP").
+      #
+      def self.get_transport_name(transport_id)
+
+        #Create a string buffer for the transport's name...
+        string_pointer = FFI::MemoryPointer.new(TRANSPORT_MAX_LENGTH) 
+
+        #... and fill it with the relevant transport's description.
+        GetDtpString(transport_id, string_pointer)
+
+        #Return the retrieved string.
+        string_pointer.read_string
 
       end
 

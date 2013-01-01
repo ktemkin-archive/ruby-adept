@@ -99,6 +99,14 @@ module Adept
       attach_adept_function :GetTdoBits, [:ulong, :bool, :bool, :pointer, :ulong, :bool]
       attach_adept_function :ClockTck, [:ulong, :bool, :bool, :ulong, :bool]
 
+
+      #
+      # Sends 
+      #
+      def send_raw(device, tdi_bytes, tms_bytes, bit_count)
+
+      end
+
       # 
       # //overlapped functions
       # DPCAPI BOOL DjtgPutTdiBits(HIF hif, BOOL fTms, BYTE * rgbSnd, BYTE * rgbRcv, DWORD cbits, BOOL fOverlap);

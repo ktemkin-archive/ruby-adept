@@ -4,6 +4,12 @@ require 'adept/lowlevel/device_error'
 module Adept
   module LowLevel
 
+    #Maximum length of an error messsage's shortname, with null terminator.
+    ErrorNameMaxLength = 16
+
+    #Maximum length of an error message's description, with null terminator.
+    ErrorMessageMaxLength = 128
+
     #
     # Basic low-level error handler.
     #
