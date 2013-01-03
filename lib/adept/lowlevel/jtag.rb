@@ -153,15 +153,7 @@ module Adept
       # Returns the values recieved on TDO during the transmission.
       #
       def self.transmit_mode_select(device, tms, tdi_value, bit_count)
-
-        #Transmit the given tms values...
-        received = transmit_with(tms) do |send_buffer, receive_buffer| 
-          PutTmsBits(device.handle, tdi_value, send_buffer, receive_buffer, bit_count, false)
-        end
-
-        #... and return the values recieved on TDO.
-        return received
-
+        specialized_transmit(:PutTmsBits, device, tdi_value, tms, bit_count) 
       end
 
       #
@@ -175,15 +167,7 @@ module Adept
       # Returns the values recieved on TDO during the transmission.
       #
       def self.transmit_data(device, tms_value, tdi, bit_count)
-
-        #Transmit the given tms values...
-        received = transmit_with(tdi) do |send_buffer, receive_buffer| 
-          PutTdiBits(device.handle, tms_value, send_buffer, receive_buffer, bit_count, false)
-        end
-
-        #... and return the values recieved on TDO.
-        return received
-
+        specialized_transmit(:PutTdiBits, device, tms_value, tdi, bit_count) 
       end
 
       #
@@ -243,6 +227,29 @@ module Adept
       end
 
       private
+
+      #
+      # Helper function which calls the specialized Adept transmit functions.
+      #
+      # device: The device with which to transmit.
+      # tms: The tmi value to be provided to the 
+      # tdi: A string (or array) of bytes, which will be transmitted over TDI.
+      # bit_count: The total number of bits to be transmitted.
+      #
+      # Returns the values recieved on TDO during the transmission.
+      #
+
+      def self.specialized_transmit(base_function_name, device, static_value, dynamic_value, bit_count)
+       
+        #Transmit the given values.
+        received = transmit_with(dynamic_value) do |send_buffer, receive_buffer| 
+          send(base_function_name, device.handle, static_value, send_buffer, receive_buffer, bit_count, false)
+        end
+
+        #... and return the values recieved on TDO.
+        return received
+
+      end
 
 
       #
