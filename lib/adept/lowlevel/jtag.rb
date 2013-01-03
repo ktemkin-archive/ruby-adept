@@ -354,7 +354,11 @@ module Adept
       end
 
       def self.interleave_tms_tdi_nibble_pair(tms, tdi)
-          tms[3] << 7 | tdi[3] << 6 | tms[2] << 5 | tdi[2] << 4 | tms[1] << 3 | tdi[1] << 2 | tms[0] << 1 | tdi[0] << 0
+          #Interleave the TMS and TDI values into a new byte.
+          new_byte = [tms[3], tdi[3], tms[2], tdi[2], tms[1], tdi[1], tms[0], tdi[0]]
+
+          #And convert the new byte into a ruby fixnum.
+          new_byte.join.to_i(2)
       end
 
     end
