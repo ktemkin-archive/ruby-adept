@@ -292,15 +292,6 @@ module Adept
 
       end
 
-
-      #
-      # Helper function, which returns its argument as a byte-string.
-      # Used for converting arrays into byte-strings.
-      #
-      def self.pack_if_necessary(bytes)
-        bytes.respond_to?(:pack) ? bytes.pack('C*').force_encoding('UTF-8') : bytes
-      end
-
       #
       # Interleaves two sequences of TMS and TDI values into the format used by the Digilent
       # API.
@@ -331,7 +322,8 @@ module Adept
       end
 
       #
-      # Interleaves a single byte of TDI and TMS, creating 
+      # Interleaves a single byte of TDI with a single byte of TMS, creating two bytes
+      # of interleave data.
       #
       def self.interleave_tms_tdi_byte_pair(tms, tdi)
 
@@ -339,12 +331,7 @@ module Adept
         tms = tms.ord
         tdi = tdi.ord
 
-        #
-        #Perform the interleaves manually; this seems like the most clearly
-        #readable way to do this. This might be a good candidate for optimization
-        #later.
-        #
-
+        #Interleave the lower and upper nibbles of each of the two values. 
         lower = interleave_tms_tdi_nibble_pair(tms, tdi)
         upper = interleave_tms_tdi_nibble_pair(tms >> 4, tdi >> 4)
       
@@ -353,6 +340,10 @@ module Adept
 
       end
 
+      #
+      # Interleaves a single nibble of TMS and TDI data, creating a new byte.
+      # See transmit_interleave (or the Digilent DJTG API) for the interleave format.
+      #
       def self.interleave_tms_tdi_nibble_pair(tms, tdi)
           #Interleave the TMS and TDI values into a new byte.
           new_byte = [tms[3], tdi[3], tms[2], tdi[2], tms[1], tdi[1], tms[0], tdi[0]]
