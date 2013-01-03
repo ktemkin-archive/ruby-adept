@@ -345,19 +345,18 @@ module Adept
         #later.
         #
 
-        lower = \
-          tms[3] << 7 | tdi[3] << 6 | tms[2] << 5 | tdi[2] << 4 | 
-          tms[1] << 3 | tdi[1] << 2 | tms[0] << 1 | tdi[0] << 0
-
-        upper = \
-          tms[7] << 7 | tdi[7] << 6 | tms[6] << 5 | tdi[6] << 4 | 
-          tms[5] << 3 | tdi[5] << 2 | tms[4] << 1 | tdi[4] << 0
-
+        lower = interleave_tms_tdi_nibble_pair(tms, tdi)
+        upper = interleave_tms_tdi_nibble_pair(tms >> 4, tdi >> 4)
       
         #Return the interleave bytes in little endian order.
         return lower, upper
 
       end
+
+      def self.interleave_tms_tdi_nibble_pair(tms, tdi)
+          tms[3] << 7 | tdi[3] << 6 | tms[2] << 5 | tdi[2] << 4 | tms[1] << 3 | tdi[1] << 2 | tms[0] << 1 | tdi[0] << 0
+      end
+
     end
   end
 end
