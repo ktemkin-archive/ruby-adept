@@ -96,12 +96,6 @@ module Adept
       state = start || @tap_state
 
       path = ""
-        #Path from reset to data states.
-        path_to_state(SelectDR).should == "01"
-        path_to_state(ShiftDR).should  == "0100"
-        path_to_state(Exit1DR).should  == "0101"
-        path_to_state(PauseDR).should  == "01010"
-        path_to_state(UpdateDR).should == "01011"
 
       #Traverse the FSM until we reach our destination.
       until state == destination
