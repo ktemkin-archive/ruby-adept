@@ -1,6 +1,6 @@
 
+require 'adept/jtag_connection'
 require 'adept/lowlevel'
-require 'adept/lowlevel/device_manager'
 
 module Adept
 
@@ -8,6 +8,9 @@ module Adept
   # Basic interface to a Digilent Adept device.
   # 
   class Device
+
+    #A list of all supported connection classes.
+    SUPPORTED_CONNECTIONS = [JTAGConnection]
 
     #Get an easy reference to the adept Device Manager API.
     DeviceManager = LowLevel::DeviceManager
@@ -55,6 +58,7 @@ module Adept
 
     end
 
+
     #
     # Closes the given device.
     #
@@ -70,6 +74,12 @@ module Adept
 
     end
 
+    #
+    # Returns a list of connection methods supported by the current device.
+    #
+    def supported_connections
+      SUPPORTED_CONNECTIONS.select { |connection| connection.supported_by?(self) }
+    end
 
     #
     # Returns an array of information regarding connected devices.
@@ -93,11 +103,6 @@ module Adept
       devices
 
     end
-
-
-
-     
-
 
   end
 

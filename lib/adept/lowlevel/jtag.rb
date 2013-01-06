@@ -38,8 +38,7 @@ module Adept
         count_pointer = FFI::MemoryPointer.new(:int32)
         
         #... and fill it with the number of available JTAG ports.
-        GetPortCount(device.handle, count_pointer)
-
+        GetPortCount(device, count_pointer)
 
         #Return the acquired count as a ruby integer.
         count_pointer.get_int32(0)
@@ -66,7 +65,7 @@ module Adept
         properties_pointer = FFI::MemoryPointer.new(:ulong)
 
         #... and fill it with a bit-vector indicates supports for various system calls.
-        GetPortProperties(device.handle, port_number, properties_pointer)
+        GetPortProperties(device, port_number, properties_pointer)
 
         #Extract the property bit-vector from the 
         properties = properties_pointer.get_ulong(0)
@@ -103,7 +102,7 @@ module Adept
       #
       # Sends (and recieves) raw data via the JTAG lines.
       #
-      def self.transmit(device, tms, tdi, bit_count)
+      def self.transmit(handle, tms, tdi, bit_count)
 
         #If TMS and TDI were both provided as byte arrays, send them both.
         if tms.respond_to?(:size) and tdi.respond_to?(:size)
@@ -112,19 +111,19 @@ module Adept
           interleave = interleave_tms_tdi_bytes(tms, tdi)
 
           #And perform an interleave transmission
-          transmit_interleave(device, interleave, bit_count)
+          transmit_interleave(handle, interleave, bit_count)
 
         #If only TMS was provided as a byte array, use the specialized version of that function.
         elsif tms.respond_to?(:size)
-          transmit_mode_select(device, tms, tdi, bit_count)
+          transmit_mode_select(handle, tms, tdi, bit_count)
 
         #If only TDI was provided as a byte array, use the specified version of that function.
         elsif tdi.respond_to?(:size)
-          transmit_data(device, tms, tdi, bit_count)
+          transmit_data(handle, tms, tdi, bit_count)
 
         #Otherwise, passively recieve data.
         else
-          receive(device, tms, tdi, bit_count) 
+          receive(handle, tms, tdi, bit_count) 
         end
 
       end
@@ -138,8 +137,8 @@ module Adept
       # tick_count: The amount of times TCK should be ticked.
       #
       #
-      def tick(device, tms, tdi, tick_count)
-        ClockTck(device.handle, tms, tdi, bit_count, false)
+      def self.tick(handle, tms, tdi, tick_count)
+        ClockTck(handle, tms, tdi, tick_count, false)
       end
 
       #
@@ -152,8 +151,8 @@ module Adept
       #
       # Returns the values recieved on TDO during the transmission.
       #
-      def self.transmit_mode_select(device, tms, tdi_value, bit_count)
-        specialized_transmit(:PutTmsBits, device, tdi_value, tms, bit_count) 
+      def self.transmit_mode_select(handle, tms, tdi_value, bit_count)
+        specialized_transmit(:PutTmsBits, handle, tdi_value, tms, bit_count) 
       end
 
       #
@@ -185,7 +184,7 @@ module Adept
 
         #Transmit the given tms values...
         received = transmit_with(nil, receive_bytes) do |send_buffer, receive_buffer| 
-          GetTdoBits(device.handle, tms_value, tdi_value, receive_buffer, bit_count, false)
+          GetTdoBits(device, tms_value, tdi_value, receive_buffer, bit_count, false)
         end
 
         #... and return the values recieved on TDO.
@@ -218,7 +217,7 @@ module Adept
         #interleave, as half of them are transmitted on TMS, and the other half on TDI.
         #
         receive_data = transmit_with(interleave, interleave.size / 2) do |send_buffer, receive_buffer| 
-          PutTmsTdiBits(device.handle, send_buffer, receive_buffer, bit_count, false)
+          PutTmsTdiBits(device, send_buffer, receive_buffer, bit_count, false)
         end
 
         #Return the recieved data.
@@ -243,7 +242,7 @@ module Adept
        
         #Transmit the given values.
         received = transmit_with(dynamic_value) do |send_buffer, receive_buffer| 
-          send(base_function_name, device.handle, static_value, send_buffer, receive_buffer, bit_count, false)
+          send(base_function_name, device, static_value, send_buffer, receive_buffer, bit_count, false)
         end
 
         #... and return the values recieved on TDO.

@@ -64,6 +64,26 @@ describe Device do
 
   end
 
+  describe "post-connection tasks" do
+
+    before :each do
+      @device = Device.by_name('Basys2')
+    end
+
+    after :each do
+      @device.close
+    end
+
+
+    it "should be able to determine the supported connections for a Basys2 board" do
+
+      #We should support JTAG
+      @device.supported_connections.should include(JTAGConnection)
+
+    end
+
+  end
+
   #TODO: ensure that the device-list is free'd afterwards
 
 end
