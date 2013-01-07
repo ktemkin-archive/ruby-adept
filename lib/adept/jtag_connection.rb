@@ -6,8 +6,6 @@ module Adept
 
   class JTAGConnection
 
-    TAPStates = JTAG::TAPStates
-
     attr_reader :tap_state
 
     #
@@ -35,11 +33,11 @@ module Adept
     # Sets the state of the target's Test Access Port.
     #
     def tap_state=(new_state) 
-     
+
       #If we're trying to enter the reset state, force a reset of the test hardware.
       #(This ensure that we can reset the test hardware even if a communications (or target) error
       # causes improper behavior.)
-      reset_target if new_state == TAPStates::Reset
+      reset_target if new_state == JTAG::TAPStates::Reset
 
       #If we're already in the desired state, abort.
       return if new_state == @tap_state
@@ -49,7 +47,7 @@ module Adept
       tms_values = [path.to_i(2)]
 
       #... and apply them.
-      LowLevel::JTAG::transmit_mode_select(@device.handle, path, false, path.length)
+      LowLevel::JTAG::transmit_mode_select(@device.handle, tms_values, false, path.length)
 
       #Update the internal record of the TAP state.
       @tap_state = new_state
@@ -76,7 +74,7 @@ module Adept
     # bytes:     A byte-string which contains the instruction to be transmitted.
     # bit_count: The total amount of bits to be transmitted.
     #
-    def transmit_data(bytes, bit_count)
+    def transmit_data(bytes, bit_count, do_not_finish=false)
       transmit_in_state(ShiftDR, bytes, bit_count, do_not_finish ? nil : Exit1DR)
     end
 
@@ -86,7 +84,7 @@ module Adept
     def run_test(clock_ticks)
       
       #Put the target into the Run-Test-Idle state.
-      tap_state = TAPStates::Idle
+      tap_state = JTAG::TAPStates::Idle
 
       #And "tick" the test clock for the desired amount of cycles.
       LowLevel::JTAG::tick(@device.handle, false, false, clock_ticks)
@@ -102,7 +100,7 @@ module Adept
       LowLevel::JTAG::tick(@device.handle, true, false, 5)
 
       #Set the internal TAP state to reset.
-      @tap_state = TAPStates::Reset
+      @tap_state = JTAG::TAPStates::Reset
 
     end
 
@@ -124,16 +122,16 @@ module Adept
     #
     #
     def transmit_in_state(state_before, bytes, bit_count, state_after=nil)
-      
-      #Put the device into the desired state.
-      tap_state = state_before
 
-      #Transmit the data...
-      LowLevel::JTAG::transmit_data(@device.handle, false, bytes, bit_count)
+      #Put the device into the desired state.
+      self.tap_state = state_before
+
+      #Transmit the data, and recieve the accompanying response.
+      response = LowLevel::JTAG::transmit_data(@device.handle, false, bytes, bit_count)
 
       #If a state_after was provided, place the device into that state.
       unless state_after.nil?
-        tap_state = state_after
+        self.tap_state = state_after
       end
 
     end
