@@ -58,6 +58,18 @@ module Adept
     end
 
     #
+    # Transmit an instruction over the JTAG test access lines.
+    #
+    def transmit_instruction(bytes, bit_count)
+
+      #Put the device into the ShiftIR state.
+      tap_state = TAPStates::ShiftIR
+
+
+
+    end
+
+    #
     # Force-resets the target device.
     #
     def reset_target

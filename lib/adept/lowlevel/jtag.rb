@@ -165,8 +165,8 @@ module Adept
       #
       # Returns the values recieved on TDO during the transmission.
       #
-      def self.transmit_data(device, tms_value, tdi, bit_count)
-        specialized_transmit(:PutTdiBits, device, tms_value, tdi, bit_count) 
+      def self.transmit_data(handle, tms_value, tdi, bit_count)
+        specialized_transmit(:PutTdiBits, handle, tms_value, tdi, bit_count) 
       end
 
       #
@@ -177,14 +177,14 @@ module Adept
       # tdi_value: The static, /boolean/ value (true or false) to be held on TDI while the TD0 values are receieved.
       # bit_count: The total number of bits to be received.
       #
-      def self.receive(device, tms_value, tdi_value, bit_count)
+      def self.receive(handle, tms_value, tdi_value, bit_count)
       
         #Determine the number of bytes to be transmitted...
         receive_bytes = (bit_count / 8.0).ceil
 
         #Transmit the given tms values...
         received = transmit_with(nil, receive_bytes) do |send_buffer, receive_buffer| 
-          GetTdoBits(device, tms_value, tdi_value, receive_buffer, bit_count, false)
+          GetTdoBits(handle, tms_value, tdi_value, receive_buffer, bit_count, false)
         end
 
         #... and return the values recieved on TDO.
@@ -209,7 +209,7 @@ module Adept
       #
       # bit_count: The total amount of bits to send.
       #
-      def self.transmit_interleave(device, interleave, bit_count)
+      def self.transmit_interleave(handle, interleave, bit_count)
 
         #Transmit the given interleave using out transmisison helper function.
         #
@@ -217,7 +217,7 @@ module Adept
         #interleave, as half of them are transmitted on TMS, and the other half on TDI.
         #
         receive_data = transmit_with(interleave, interleave.size / 2) do |send_buffer, receive_buffer| 
-          PutTmsTdiBits(device, send_buffer, receive_buffer, bit_count, false)
+          PutTmsTdiBits(handle, send_buffer, receive_buffer, bit_count, false)
         end
 
         #Return the recieved data.
@@ -230,7 +230,7 @@ module Adept
       #
       # Helper function which calls the specialized Adept transmit functions.
       #
-      # device: The device with which to transmit.
+      # handle: The device with which to transmit.
       # tms: The tmi value to be provided to the 
       # tdi: A string (or array) of bytes, which will be transmitted over TDI.
       # bit_count: The total number of bits to be transmitted.
@@ -238,11 +238,11 @@ module Adept
       # Returns the values recieved on TDO during the transmission.
       #
 
-      def self.specialized_transmit(base_function_name, device, static_value, dynamic_value, bit_count)
+      def self.specialized_transmit(base_function_name, handle, static_value, dynamic_value, bit_count)
        
         #Transmit the given values.
         received = transmit_with(dynamic_value) do |send_buffer, receive_buffer| 
-          send(base_function_name, device, static_value, send_buffer, receive_buffer, bit_count, false)
+          send(base_function_name, handle, static_value, send_buffer, receive_buffer, bit_count, false)
         end
 
         #... and return the values recieved on TDO.
