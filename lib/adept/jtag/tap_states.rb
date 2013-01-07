@@ -15,7 +15,7 @@ module Adept
       #Data Register Access States
       tap_state :SelectDR,  0 => :CaptureDR,  1 => :SelectIR
       tap_state :CaptureDR, 0 => :ShiftDR,    1 => :Exit1DR
-      tap_state :ShiftDR,   0 => :PauseDR,    1 => :Exit1DR
+      tap_state :ShiftDR,   0 => :ShiftDR,    1 => :Exit1DR
       tap_state :Exit1DR,   0 => :PauseDR,    1 => :UpdateDR
       tap_state :PauseDR,   0 => :PauseDR,    1 => :Exit2DR
       tap_state :Exit2DR,   0 => :ShiftDR,    1 => :UpdateDR
@@ -46,9 +46,7 @@ module Adept
           #If we're looking for an instruction state, continue to the next column.
           (state.name =~ /IR$/) ? 1 : 0
         end
-
       end
-
     end
   end
 end

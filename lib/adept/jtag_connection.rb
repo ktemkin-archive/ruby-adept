@@ -8,7 +8,6 @@ module Adept
 
     TAPStates = JTAG::TAPStates
 
-
     attr_reader :tap_state
 
     #
@@ -58,14 +57,39 @@ module Adept
     end
 
     #
-    # Transmit an instruction over the JTAG test access lines.
+    # Transmit an instruction over the JTAG test access lines, to be placed into
+    # the JTAG instruction register.
     #
-    def transmit_instruction(bytes, bit_count)
+    # bytes:     A byte-string which contains the instruction to be transmitted.
+    # bit_count: The total amount of bits to be transmitted.
+    #
+    # do_not_finish: If set, the transmission window will be "left open", so additional instructions can be transmitted.
+    #
+    def transmit_instruction(bytes, bit_count, do_not_finish=false)
+      transmit_in_state(ShiftIR, bytes, bit_count, do_not_finish ? nil : Exit1IR)
+    end
 
-      #Put the device into the ShiftIR state.
-      tap_state = TAPStates::ShiftIR
+    #
+    # Transmit an instruction over the JTAG test access lines, to be placed into
+    # the JTAG data register.
+    #
+    # bytes:     A byte-string which contains the instruction to be transmitted.
+    # bit_count: The total amount of bits to be transmitted.
+    #
+    def transmit_data(bytes, bit_count)
+      transmit_in_state(ShiftDR, bytes, bit_count, do_not_finish ? nil : Exit1DR)
+    end
 
+    #
+    # Switches to run/test mode, and holds that state for the desired amount of clock ticks.
+    #
+    def run_test(clock_ticks)
+      
+      #Put the target into the Run-Test-Idle state.
+      tap_state = TAPStates::Idle
 
+      #And "tick" the test clock for the desired amount of cycles.
+      LowLevel::JTAG::tick(@device.handle, false, false, clock_ticks)
 
     end
 
@@ -91,6 +115,28 @@ module Adept
     end
 
     private
+
+    #
+    # Transmits a sequence of data while in a given state.
+    #
+    # bytes:     A byte-string which contains the instruction to be transmitted.
+    # bit_count: The total amount of bits to be transmitted.
+    #
+    #
+    def transmit_in_state(state_before, bytes, bit_count, state_after=nil)
+      
+      #Put the device into the desired state.
+      tap_state = state_before
+
+      #Transmit the data...
+      LowLevel::JTAG::transmit_data(@device.handle, false, bytes, bit_count)
+
+      #If a state_after was provided, place the device into that state.
+      unless state_after.nil?
+        tap_state = state_after
+      end
+
+    end
 
     #
     # Find the shortest "path" (sequence of most-select values) which will 
@@ -128,12 +174,5 @@ module Adept
       path
 
     end
-
-
-  
-      
-
-
   end
-
 end
