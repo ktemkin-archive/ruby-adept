@@ -96,7 +96,7 @@ describe JTAGConnection do
   #
   describe "#transmit_instruction" do
 
-    it "should move the target into the Exit1IR state before transmission" do
+    it "should move the target into the ShiftIR state before transmission" do
 
       #Ensure that our virtual target is placed into the ShiftIR state _prior_ to transmission. 
       LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), PathToShiftIR, false, 5).ordered
@@ -134,7 +134,7 @@ describe JTAGConnection do
   #
   describe "#transmit_data" do
 
-    it "should move the target into the Exit1DR state before transmission" do
+    it "should move the target into the ShiftDR state before transmission" do
 
       path_to_shift_dr = ["0100".to_i(2)]
 
@@ -168,6 +168,47 @@ describe JTAGConnection do
     end
 
   end
+
+  #
+  # Receive TAP data
+  #
+  describe "#receive_data" do
+
+    it "should move the target into the ShiftDR state before receiving" do
+
+      path_to_shift_dr = ["0100".to_i(2)]
+
+      #Ensure that our virtual target is placed into the ShiftIR state _prior_ to transmission. 
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), path_to_shift_dr, false, 4).ordered
+      LowLevel::JTAG::should_receive(:receive).ordered
+
+      @jtag.receive_data(6, true)
+
+    end
+
+    it "should receive the relevant data" do
+      LowLevel::JTAG::should_receive(:receive).with(kind_of(Numeric), false, false, 6)
+      @jtag.receive_data(6)
+    end
+
+    it "should put the device into the Exit1DR state after transmission." do
+
+      #Ensure that our virtual target is placed into the Exit1 state _after_ transmission.
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(any_args).ordered
+      LowLevel::JTAG::should_receive(:receive).ordered
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), [1], false, 1).ordered
+
+      @jtag.receive_data(6)
+
+    end
+
+    it "should leave the device in the Exit1DR state" do
+      @jtag.receive_data(6)
+      @jtag.tap_state.should == Exit1DR
+    end
+
+  end
+
 
   #
   # Run the target device's test.

@@ -68,14 +68,38 @@ module Adept
     end
 
     #
-    # Transmit an instruction over the JTAG test access lines, to be placed into
+    # Transmit data over the JTAG test access lines, to be placed into
     # the JTAG data register.
     #
     # bytes:     A byte-string which contains the instruction to be transmitted.
     # bit_count: The total amount of bits to be transmitted.
     #
+    # do_not_finish: If set, the transmission window will be "left open", so additional data can be transmitted.
+    #
     def transmit_data(bytes, bit_count, do_not_finish=false)
       transmit_in_state(ShiftDR, bytes, bit_count, do_not_finish ? nil : Exit1DR)
+    end
+
+
+    #
+    # Recieve data from the JTAG data register.
+    #
+    # bit_count: The amount of bits to receive.
+    # do_not_finish: If set, the transmission will be "left open" so additional data can be received.
+    #
+    def receive_data(bit_count, do_not_finish=false)
+
+      #Put the device into the desired state.
+      self.tap_state = JTAG::TAPStates::ShiftDR
+
+      #Transmit the data, and recieve the accompanying response.
+      response = LowLevel::JTAG::receive(@device.handle, false, false, bit_count)
+
+      #If a state_after was provided, place the device into that state.
+      unless do_not_finish
+        self.tap_state = JTAG::TAPStates::Exit1DR
+      end
+
     end
 
     #
