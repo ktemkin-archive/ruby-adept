@@ -14,7 +14,6 @@ include JTAG::TAPStates
 #
 describe JTAGConnection do
 
-  PathToShiftDR = ["0100".to_i(2)]
   PathToShiftIR = ["01100".to_i(2)]
 
   before :all do
@@ -67,105 +66,137 @@ describe JTAGConnection do
       end
 
     end
+  end
 
-    #
-    # TAP State Setter
-    #
-    describe "#tap_state=" do
+  #
+  # TAP State Setter
+  #
+  describe "#tap_state=" do
 
 
-      it "should ask the target device to move to the appropriate state" do
+    it "should ask the target device to move to the appropriate state" do
 
-        #Ensure that our virtual target is placed into the ShiftIR state.
-        LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), PathToShiftIR, false, 5)
+      #Ensure that our virtual target is placed into the ShiftIR state.
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), PathToShiftIR, false, 5)
 
-        #Attempt to move the target into the ShiftIR state.
-        @jtag.tap_state = ShiftIR
-
-      end
-
-      it "should adjust the internal state" do
-        @jtag.tap_state = ShiftIR
-        @jtag.tap_state.should == ShiftIR
-      end
+      #Attempt to move the target into the ShiftIR state.
+      @jtag.tap_state = ShiftIR
 
     end
 
-    #
-    # Transmit TAP instruction
-    #
-    describe "#transmit_instruction" do
+    it "should adjust the internal state" do
+      @jtag.tap_state = ShiftIR
+      @jtag.tap_state.should == ShiftIR
+    end
 
-      it "should move the target into the Exit1IR state before transmission" do
+  end
 
-        #Ensure that our virtual target is placed into the ShiftIR state _prior_ to transmission. 
-        LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), PathToShiftIR, false, 5).ordered
-        LowLevel::JTAG::should_receive(:transmit_data).ordered
+  #
+  # Transmit TAP instruction
+  #
+  describe "#transmit_instruction" do
 
-        @jtag.transmit_instruction([0x09], 6, true)
+    it "should move the target into the Exit1IR state before transmission" do
 
-      end
+      #Ensure that our virtual target is placed into the ShiftIR state _prior_ to transmission. 
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), PathToShiftIR, false, 5).ordered
+      LowLevel::JTAG::should_receive(:transmit_data).ordered
 
-      it "should transmit the relevant data" do
-        LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, [0x09], 6)
-        @jtag.transmit_instruction([0x09], 6)
-      end
-
-      it "should put the device into the Exit1IR state after transmission." do
-
-        #Ensure that our virtual target is placed into the Exit1 state _after_ transmission.
-        LowLevel::JTAG::should_receive(:transmit_mode_select).with(any_args).ordered
-        LowLevel::JTAG::should_receive(:transmit_data).ordered
-        LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), [1], false, 1).ordered
-
-        @jtag.transmit_instruction([0x09], 6)
-
-      end
-
-      it "should leave the device in the Exit1IR state" do
-        @jtag.transmit_instruction([0x09], 6)
-        @jtag.tap_state.should == Exit1IR
-      end
+      @jtag.transmit_instruction([0x09], 6, true)
 
     end
+
+    it "should transmit the relevant data" do
+      LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, [0x09], 6)
+      @jtag.transmit_instruction([0x09], 6)
+    end
+
+    it "should put the device into the Exit1IR state after transmission." do
+
+      #Ensure that our virtual target is placed into the Exit1 state _after_ transmission.
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(any_args).ordered
+      LowLevel::JTAG::should_receive(:transmit_data).ordered
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), [1], false, 1).ordered
+
+      @jtag.transmit_instruction([0x09], 6)
+
+    end
+
+    it "should leave the device in the Exit1IR state" do
+      @jtag.transmit_instruction([0x09], 6)
+      @jtag.tap_state.should == Exit1IR
+    end
+
+  end
 
   #
   # Trasmit TAP data
   #
   describe "#transmit_data" do
 
-      it "should move the target into the Exit1DR state before transmission" do
+    it "should move the target into the Exit1DR state before transmission" do
 
-        #Ensure that our virtual target is placed into the ShiftIR state _prior_ to transmission. 
-        LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), PathToShiftDR, false, 4).ordered
-        LowLevel::JTAG::should_receive(:transmit_data).ordered
+      path_to_shift_dr = ["0100".to_i(2)]
 
-        @jtag.transmit_data([0x09], 6, true)
+      #Ensure that our virtual target is placed into the ShiftIR state _prior_ to transmission. 
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), path_to_shift_dr, false, 4).ordered
+      LowLevel::JTAG::should_receive(:transmit_data).ordered
 
-      end
-
-      it "should transmit the relevant data" do
-        LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, [0x09], 6)
-        @jtag.transmit_data([0x09], 6)
-      end
-
-      it "should put the device into the Exit1DR state after transmission." do
-
-        #Ensure that our virtual target is placed into the Exit1 state _after_ transmission.
-        LowLevel::JTAG::should_receive(:transmit_mode_select).with(any_args).ordered
-        LowLevel::JTAG::should_receive(:transmit_data).ordered
-        LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), [1], false, 1).ordered
-
-        @jtag.transmit_data([0x09], 6)
-
-      end
-
-      it "should leave the device in the Exit1DR state" do
-        @jtag.transmit_data([0x09], 6)
-        @jtag.tap_state.should == Exit1DR
-      end
+      @jtag.transmit_data([0x09], 6, true)
 
     end
-  
+
+    it "should transmit the relevant data" do
+      LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, [0x09], 6)
+      @jtag.transmit_data([0x09], 6)
+    end
+
+    it "should put the device into the Exit1DR state after transmission." do
+
+      #Ensure that our virtual target is placed into the Exit1 state _after_ transmission.
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(any_args).ordered
+      LowLevel::JTAG::should_receive(:transmit_data).ordered
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), [1], false, 1).ordered
+
+      @jtag.transmit_data([0x09], 6)
+
+    end
+
+    it "should leave the device in the Exit1DR state" do
+      @jtag.transmit_data([0x09], 6)
+      @jtag.tap_state.should == Exit1DR
+    end
+
   end
+
+  #
+  # Run the target device's test.
+  #
+  describe "#run_test" do
+
+    it "should move the target into the Idle state prior to its main function" do
+
+      path_to_idle = [0]
+
+      #Ensure that our virtual target is placed into the ShiftIR state _prior_ to transmission. 
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), path_to_idle, false, 1).ordered
+      LowLevel::JTAG::should_receive(:tick).ordered
+
+      @jtag.run_test(100)
+
+    end
+
+    it "should cause TCK to tick the specified number of times with TDO/TMS low" do
+      LowLevel::JTAG::should_receive(:tick).with(kind_of(Numeric), false, false, 100)
+      @jtag.run_test(100)
+    end
+
+    it "should leave the device in the Idle state" do
+      @jtag.run_test(100)
+      @jtag.tap_state.should == Idle
+    end
+      
+
+  end
+
 end

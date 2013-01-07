@@ -84,7 +84,7 @@ module Adept
     def run_test(clock_ticks)
       
       #Put the target into the Run-Test-Idle state.
-      tap_state = JTAG::TAPStates::Idle
+      self.tap_state = JTAG::TAPStates::Idle
 
       #And "tick" the test clock for the desired amount of cycles.
       LowLevel::JTAG::tick(@device.handle, false, false, clock_ticks)
