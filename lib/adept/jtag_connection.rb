@@ -31,19 +31,6 @@ module Adept
       LowLevel::JTAG::Disable(@device.handle)
     end
 
-    #
-    # Force-resets the target device.
-    #
-    def reset_target
-      
-      #Reset the target device's JTAG controller by sending five bits of TMS='1'.
-      LowLevel::JTAG::tick(@device.handle, true, false, 5)
-
-      #Set the internal TAP state to reset.
-      @tap_state = TAPStates::Reset
-
-    end
-
 
     #
     # Sets the state of the target's Test Access Port.
@@ -67,6 +54,19 @@ module Adept
 
       #Update the internal record of the TAP state.
       @tap_state = new_state
+
+    end
+
+    #
+    # Force-resets the target device.
+    #
+    def reset_target
+      
+      #Reset the target device's JTAG controller by sending five bits of TMS='1'.
+      LowLevel::JTAG::tick(@device.handle, true, false, 5)
+
+      #Set the internal TAP state to reset.
+      @tap_state = TAPStates::Reset
 
     end
 

@@ -76,20 +76,20 @@ describe LowLevel::JTAG do
     describe "pre-connection tests" do
 
       it "should detect that a Basys2 board supports JTAG" do
-        LowLevel::JTAG.supported?(@device).should be_true
+        LowLevel::JTAG.supported?(@device.handle).should be_true
       end
 
       it "should detect exactly one JTAG port on a Basys2 board" do 
-        LowLevel::JTAG.port_count(@device).should == 1
+        LowLevel::JTAG.port_count(@device.handle).should == 1
       end
 
       it "should detect that a Basys2 board supports set the JTAG connection speed" do
-        support = LowLevel::JTAG.supported_calls(@device, 0)
+        support = LowLevel::JTAG.supported_calls(@device.handle, 0)
         support[:set_speed].should be_true
       end
 
       it "should detect that a Basys2 board can't set the individual JTAG pins" do
-        support = LowLevel::JTAG.supported_calls(@device, 0)
+        support = LowLevel::JTAG.supported_calls(@device.handle, 0)
         support[:set_pins].should be_false
       end
 
@@ -130,10 +130,10 @@ describe LowLevel::JTAG do
         sequence = "\xAA\x22\x00"
        
         #Send the command to the device...
-        LowLevel::JTAG.transmit_interleave(@device, sequence, 9)
+        LowLevel::JTAG.transmit_interleave(@device.handle, sequence, 9)
 
         #And shift in zeroes, simultaneously recieving the device's ID codes.
-        response = LowLevel::JTAG.transmit_interleave(@device, "\x00" * 16, 64)
+        response = LowLevel::JTAG.transmit_interleave(@device.handle, "\x00" * 16, 64)
 
         #Check for the correct ID codes.
         response.reverse.should == IDCode_Platform_Flash + IDCode_Basys2_250K
@@ -147,10 +147,10 @@ describe LowLevel::JTAG do
         sequence = [0xAA, 0x22, 0x00] # 1010_1010, 0010_0010, 0000_0000; TMS = 1111 0101
        
         #Send the command to the device...
-        LowLevel::JTAG.transmit_interleave(@device, sequence, 9)
+        LowLevel::JTAG.transmit_interleave(@device.handle, sequence, 9)
 
         #And shift in zeroes, simultaneously recieving the device's ID codes.
-        response = LowLevel::JTAG.transmit_interleave(@device, "\x00" * 16, 64)
+        response = LowLevel::JTAG.transmit_interleave(@device.handle, "\x00" * 16, 64)
 
         #Check for the correct ID codes.
         response.reverse.should == IDCode_Platform_Flash + IDCode_Basys2_250K
@@ -166,10 +166,10 @@ describe LowLevel::JTAG do
         tms = [0x09, 0x00]
 
         #Send the command to the device...
-        LowLevel::JTAG.transmit(@device, tms, tdi, 6)
+        LowLevel::JTAG.transmit(@device.handle, tms, tdi, 6)
 
         #And shift in zeroes, simultaneously recieving the device's ID codes.
-        response = LowLevel::JTAG.transmit(@device, "\x00" * 8, "\x00" * 8, 64)
+        response = LowLevel::JTAG.transmit(@device.handle, "\x00" * 8, "\x00" * 8, 64)
 
         #Check for the correct ID codes.
         response.reverse.should == IDCode_Platform_Flash + IDCode_Basys2_250K
@@ -179,10 +179,10 @@ describe LowLevel::JTAG do
       it "should be able to accept more optimized transmit/recieve functions " do
 
         #Request that each of the devices identify themselves.
-        LowLevel::JTAG.transmit(@device, [0x09, 0x00], false, 6)
+        LowLevel::JTAG.transmit(@device.handle, [0x09, 0x00], false, 6)
 
         #Recieve the device's ID codes.
-        response = LowLevel::JTAG.receive(@device, false, false, 64)
+        response = LowLevel::JTAG.receive(@device.handle, false, false, 64)
 
         #Check for the correct ID codes.
         response.reverse.should == IDCode_Platform_Flash + IDCode_Basys2_250K
