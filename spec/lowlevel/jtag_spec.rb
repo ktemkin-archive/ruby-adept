@@ -179,7 +179,7 @@ describe LowLevel::JTAG do
       it "should be able to accept more optimized transmit/recieve functions " do
 
         #Request that each of the devices identify themselves.
-        LowLevel::JTAG.transmit(@device.handle, [0x09, 0x00], false, 6)
+        LowLevel::JTAG.transmit(@device.handle, [0x09], false, 6)
 
         #Recieve the device's ID codes.
         response = LowLevel::JTAG.receive(@device.handle, false, false, 64)

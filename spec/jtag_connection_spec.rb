@@ -14,7 +14,8 @@ include JTAG::TAPStates
 #
 describe JTAGConnection do
 
-  PathToShiftIR = ["01100".to_i(2)]
+  PathToShiftIR = ["01100".reverse.to_i(2)]
+  PathToShiftDR = ["0100".reverse.to_i(2)]
 
   before :all do
     @device = Device.by_name('Basys2')
@@ -136,10 +137,9 @@ describe JTAGConnection do
 
     it "should move the target into the ShiftDR state before transmission" do
 
-      path_to_shift_dr = ["0100".to_i(2)]
 
       #Ensure that our virtual target is placed into the ShiftIR state _prior_ to transmission. 
-      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), path_to_shift_dr, false, 4).ordered
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), PathToShiftDR, false, 4).ordered
       LowLevel::JTAG::should_receive(:transmit_data).ordered
 
       @jtag.transmit_data([0x09], 6, true)
@@ -176,10 +176,8 @@ describe JTAGConnection do
 
     it "should move the target into the ShiftDR state before receiving" do
 
-      path_to_shift_dr = ["0100".to_i(2)]
-
       #Ensure that our virtual target is placed into the ShiftIR state _prior_ to transmission. 
-      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), path_to_shift_dr, false, 4).ordered
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), PathToShiftDR, false, 4).ordered
       LowLevel::JTAG::should_receive(:receive).ordered
 
       @jtag.receive_data(6, true)
@@ -237,6 +235,33 @@ describe JTAGConnection do
       @jtag.tap_state.should == Idle
     end
       
+  end
+
+  #
+  # Enumerate all connected devices, by IDCode.
+  #
+  describe "#connected_devices" do
+
+    it "should reset the device before proceeding" do
+      @jtag.should_receive(:reset_target).ordered
+      @jtag.should_receive(:receive_data).ordered.and_return("\x00\x00\x00\x00")
+
+      @jtag.connected_devices
+    end
+
+    it "should return an empty array when no devices are detected" do
+      @jtag.should_receive(:receive_data).and_return("\x00\x00\x00\x00")
+      @jtag.connected_devices.should == []
+    end
+
+    it "should return an array of idcodes, when they are received" do
+      @jtag.should_receive(:receive_data).and_return("\x12\x34\x56\x78", "\xAB\xCD\xEF\xFF", "\x00\x00\x00\x00")
+      @jtag.connected_devices.should == ["\x78\x56\x34\x12","\xFF\xEF\xCD\xAB"]
+    end
+
+    it "should be able to identify the devices on a Basys2 board" do
+      @jtag.connected_devices.should == ["\xD5\x04\x50\x93", "\x11\xC1\xA0\x93"]
+    end
 
   end
 

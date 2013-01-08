@@ -28,6 +28,36 @@ module Adept
       LowLevel::JTAG::Disable(@device.handle)
     end
 
+    #
+    # Returns a list of the JTAG IDCodes for all connected devices.
+    #
+    def connected_devices
+
+      #Reset all targets' TAPs; this will automatically load the IDCODE instruction into the
+      #instruction register
+      reset_target
+
+      idcodes = []
+
+      #Loop until we've enumerated all devices in the JTAG chain.
+      loop do
+      
+        #Recieve a single 32-bit JTAG ID code, LSB first.
+        idcode = receive_data(32, true)
+
+        #If we've recieved the special "null" IDcode, we've finished enumerating.
+        break if idcode == "\x00\x00\x00\x00" 
+
+        #Otherwise, add this idcode to the list and continue.
+        idcodes << idcode.reverse
+
+      end
+
+      #Return the list of IDCodes.
+      idcodes
+
+    end
+
 
     #
     # Sets the state of the target's Test Access Port.
@@ -43,11 +73,11 @@ module Adept
       return if new_state == @tap_state
 
       #Find the correct sequence of TMS values to reach the desired state...
-      path = path_to_state(new_state)
+      path = path_to_state(new_state).reverse
       tms_values = [path.to_i(2)]
 
       #... and apply them.
-      LowLevel::JTAG::transmit_mode_select(@device.handle, tms_values, false, path.length)
+      LowLevel::JTAG::transmit(@device.handle, tms_values, false, path.length)
 
       #Update the internal record of the TAP state.
       @tap_state = new_state
@@ -100,6 +130,9 @@ module Adept
         self.tap_state = JTAG::TAPStates::Exit1DR
       end
 
+      #Return the received response.
+      response
+
     end
 
     #
@@ -151,12 +184,15 @@ module Adept
       self.tap_state = state_before
 
       #Transmit the data, and recieve the accompanying response.
-      response = LowLevel::JTAG::transmit_data(@device.handle, false, bytes, bit_count)
+      response = LowLevel::JTAG::transmit(@device.handle, false, bytes, bit_count)
 
       #If a state_after was provided, place the device into that state.
       unless state_after.nil?
         self.tap_state = state_after
       end
+
+      #Return the received response.
+      response
 
     end
 
