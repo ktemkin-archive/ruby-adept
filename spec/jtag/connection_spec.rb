@@ -142,8 +142,9 @@ describe JTAG::Connection do
       #Ensure that our virtual target is placed into the ShiftIR state _prior_ to transmission. 
       LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), PathToShiftDR, false, 4).ordered
       LowLevel::JTAG::should_receive(:transmit_data).ordered
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(any_args).ordered
 
-      @jtag.transmit_data([0x09], 6, true)
+      @jtag.transmit_data([0x09], 6)
 
     end
 
@@ -280,12 +281,16 @@ describe JTAG::Connection do
       idcodes = devices.collect { |d| d.idcode }
       idcodes.should == ["\x11\xC1\xA0\x93", "\xD5\x04\x50\x93"]
 
-      #... and the types.
+      #...  the types...
       types = devices.collect { |d| d.class }
       types.should == [JTAG::FPGA, JTAG::PlatformFlash]
 
+      #... the positions in the chain...
+      positions = devices.collect { |d| d.instance_variable_get(:@position_in_chain) }
+      positions.should == [1, 0]
+
       #... and the chain widths.
-      widths = devices.collect { |d| d.instance_variable_get(:@scan_offset) }
+      widths = devices.collect { |d| d.instance_variable_get(:@chain_offset) }
       widths.should == [8, 0]
 
     end

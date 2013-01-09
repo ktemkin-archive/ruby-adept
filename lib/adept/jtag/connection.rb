@@ -46,6 +46,7 @@ module Adept
 
         devices = []
         chain_length = 0
+        devices_in_chain = 0
 
         #Loop until we've enumerated all devices in the JTAG chain.
         loop do
@@ -57,15 +58,17 @@ module Adept
           break if idcode == "\x00\x00\x00\x00"
 
           #Otherwise, add this idcode to the list...
-          devices << JTAG::Device.from_idcode(idcode.reverse, self, chain_length)
+          devices << JTAG::Device.from_idcode(idcode.reverse, self, devices_in_chain, chain_length)
 
           #... add its width the the known scan-chain length
           chain_length += devices.last.instruction_width
+          devices_in_chain += 1
 
         end
 
         #Update the internal chain-length.
         @chain_length = chain_length
+        @devices_in_chain = devices_in_chain
 
         #Return the list of IDCodes.
         devices.reverse
@@ -109,22 +112,16 @@ module Adept
       #
       def transmit_instruction(bytes, bit_count, pad_to_chain_length=false, prefix_with_ones=0, do_not_finish=false)
 
-        #Determine if this instruction will have to be left-padded to the chain length.
-        padding_required = pad_to_chain_length && (prefix_with_ones + bit_count < @chain_length)
+        #If the pad-to-chain length option is selected, compute the total amount of padding required.
+        #Otherwise, set the required padding to zero.
+        padding_after = pad_to_chain_length ? [@chain_length - prefix_with_ones - bit_count, 0].min : 0
 
-        #If we've been passed the "prefix with ones" option, prefix the transmission with the relevant amount of ones.
-        transmit_in_state(ShiftIR, true, prefix_with_ones) unless prefix_with_ones.zero?
+        #Move to the Exit1IR state after transmission, allowing the recieved data to be processed,
+        #unless the do_not_finish value is set.
+        state_after = do_not_finish ? nil : Exit1IR
 
         #Transmit the actual instruction.
-        transmit_in_state(ShiftIR, bytes, bit_count)
-
-        #If padding is required, transmit the additional bits.
-        if padding_required
-          transmit_in_state(ShiftIR, true, @chain_length - bit_count - prefix_with_ones)
-        end
-
-        #If we've been instructed to close the transmission window after sending, put the device into the Exit1IR state.
-        self.tap_state = Exit1IR unless do_not_finish
+        transmit_in_state(ShiftIR, bytes, bit_count, state_after, true, prefix_with_ones, padding_after)
 
       end
 
@@ -137,8 +134,19 @@ module Adept
       #
       # do_not_finish: If set, the transmission window will be "left open", so additional data can be transmitted.
       #
-      def transmit_data(bytes, bit_count, do_not_finish=false)
-        transmit_in_state(ShiftDR, bytes, bit_count, do_not_finish ? nil : Exit1DR)
+      def transmit_data(bytes, bit_count, pad_to_chain_length=false, prefix_with_zeroes=0, do_not_finish=false)
+
+        #If the pad-to-chain length option is selected, compute the total amount of padding required.
+        #Otherwise, set the required padding to zero.
+        padding_after = pad_to_chain_length ? [@devices_in_chain - prefix_with_zeroes - 1, 0].min : 0
+
+        #Move to the Exit1IR state after transmission, allowing the recieved data to be processed,
+        #unless the do_not_finish value is set.
+        state_after = do_not_finish ? nil : Exit1DR
+
+        #Transmit the actual instruction.
+        transmit_in_state(ShiftDR, bytes, bit_count, state_after, false, prefix_with_zeroes, padding_after)
+
       end
 
 
@@ -220,13 +228,19 @@ module Adept
       # bit_count: The total amount of bits to be transmitted.
       #
       #
-      def transmit_in_state(state_before, value, bit_count, state_after=nil)
+      def transmit_in_state(state_before, value, bit_count, state_after=nil, pad_with=false, pad_before=0, pad_after=0)
 
         #Put the device into the desired state.
         self.tap_state = state_before
 
+        #If we've been instructed to pad before the transmission, do so.
+        LowLevel::JTAG::transmit(@device.handle, false, pad_with, pad_before) unless pad_before.zero?
+
         #Transmit the data, and recieve the accompanying response.
         response = LowLevel::JTAG::transmit(@device.handle, false, value, bit_count)
+
+        #If we've been instructed to pad before the transmission, do so.
+        LowLevel::JTAG::transmit(@device.handle, false, pad_with, pad_before) unless pad_after.zero?
 
         #If a state_after was provided, place the device into that state.
         unless state_after.nil?

@@ -29,12 +29,16 @@ module Adept
       # by the provided IDCode.
       #
       # idcode: The IDCode of the new JTAG device.
+      # position_in_chain:
+      #   The device's position in the chain.  The first device to recieve data will have
+      #   the highest device number. In a two device chain, Device 1 will recieve data before
+      #   Device 0.
       # chain_offset:
       #   The amount of bits which must be transmitted to other devices before an instruction
       #   can be transmitted to this device- equal to the amount of bits to the _right_ of the
       #   active device on the scan chain.
       #
-      def self.from_idcode(idcode, connection, chain_offset)
+      def self.from_idcode(idcode, connection, position_in_chain, chain_offset)
 
         #Find the first device type which supports the IDCode.
         device_type = @device_types.find { |type| type.supports?(idcode) }
@@ -43,7 +47,7 @@ module Adept
         device_type ||= self
 
         #Otherwise, instantiate tha new device from the device type.
-        device_type.new(idcode, connection, chain_offset)
+        device_type.new(idcode, connection, position_in_chain, chain_offset)
 
       end
 
@@ -67,9 +71,10 @@ module Adept
       #   active device on the scan chain.
       #
       #
-      def initialize(idcode, connection, chain_offset)
+      def initialize(idcode, connection, position_in_chain, chain_offset)
         @idcode = idcode
         @connection = connection
+        @position_in_chain = position_in_chain
         @chain_offset = chain_offset
       end
 
@@ -89,6 +94,14 @@ module Adept
       #
       def set_instruction(instruction)
         @connection.transmit_instruction(instruction, instruction_width, true, @chain_offset) 
+      end
+
+      #
+      # Send data directly to the given device. Assumes the current device is
+      # active, and all other devices are in bypass.
+      #
+      def transmit_data(data, bit_count)
+        @connectoin.transmit_data(instruction, bit_count, true, @position_in_chain)
       end
 
     end

@@ -35,11 +35,11 @@ describe Device do
   describe "#device_from_idcode" do
 
     it "should be able to create devices with the appropriate type given their IDCode" do
-      Device.device_from_idcode("\xAB\xCD\xEF\xFF", nil, 0).class.should == ADevice
+      JTAG::Device.from_idcode("\xAB\xCD\xEF\xFF", nil, 0, 0).class.should == ADevice
     end
 
     it "should create a generic JTAGDevice when its IDCode isn't recognized" do
-      Device.device_from_idcode("\x00\x00\x00\x00", nil, 0).class.should == Device
+      JTAG::Device.from_idcode("\x00\x00\x00\x00", nil, 0, 0).class.should == Device
     end
 
   end
