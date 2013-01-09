@@ -102,8 +102,9 @@ describe JTAG::Connection do
       #Ensure that our virtual target is placed into the ShiftIR state _prior_ to transmission. 
       LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), PathToShiftIR, false, 5).ordered
       LowLevel::JTAG::should_receive(:transmit_data).ordered
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(any_args).ordered
 
-      @jtag.transmit_instruction([0x09], 6, true)
+      @jtag.transmit_instruction([0x09], 6)
 
     end
 
@@ -265,6 +266,12 @@ describe JTAG::Connection do
       idcodes.should == ["\xFF\xEF\xCD\xAB", "\x78\x56\x34\x12"]
     end
 
+    it "should correctly determine the length of the instruction scan chain" do
+      @jtag.should_receive(:receive_data).and_return("\x93\x50\x04\xD5", "\x93\xA0\xC1\x11", "\x00\x00\x00\x00")
+      @jtag.connected_devices
+      @jtag.instance_variable_get(:@chain_length).should == 8 + 6 
+    end
+
     it "should be able to identify the devices on a Basys2 board" do
 
       devices = @jtag.connected_devices
@@ -277,7 +284,12 @@ describe JTAG::Connection do
       types = devices.collect { |d| d.class }
       types.should == [JTAG::FPGA, JTAG::PlatformFlash]
 
+      #... and the chain widths.
+      widths = devices.collect { |d| d.instance_variable_get(:@scan_offset) }
+      widths.should == [8, 0]
+
     end
+
 
   end
 

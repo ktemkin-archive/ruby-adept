@@ -103,11 +103,29 @@ module Adept
       #
       # bytes:     A byte-string which contains the instruction to be transmitted.
       # bit_count: The total amount of bits to be transmitted.
+      # pad_to_chain_length: If set, any bits not set in the chain 
       #
       # do_not_finish: If set, the transmission window will be "left open", so additional instructions can be transmitted.
       #
-      def transmit_instruction(bytes, bit_count, do_not_finish=false)
-        transmit_in_state(ShiftIR, bytes, bit_count, do_not_finish ? nil : Exit1IR)
+      def transmit_instruction(bytes, bit_count, pad_to_chain_length=false, prefix_with_ones=0, do_not_finish=false)
+
+        #Determine if this instruction will have to be left-padded to the chain length.
+        padding_required = pad_to_chain_length && (prefix_with_ones + bit_count < @chain_length)
+
+        #If we've been passed the "prefix with ones" option, prefix the transmission with the relevant amount of ones.
+        transmit_in_state(ShiftIR, true, prefix_with_ones) unless prefix_with_ones.zero?
+
+        #Transmit the actual instruction.
+        transmit_in_state(ShiftIR, bytes, bit_count)
+
+        #If padding is required, transmit the additional bits.
+        if padding_required
+          transmit_in_state(ShiftIR, true, @chain_length - bit_count - prefix_with_ones)
+        end
+
+        #If we've been instructed to close the transmission window after sending, put the device into the Exit1IR state.
+        self.tap_state = Exit1IR unless do_not_finish
+
       end
 
       #
@@ -197,17 +215,18 @@ module Adept
       #
       # Transmits a sequence of data while in a given state.
       #
-      # bytes:     A byte-string which contains the instruction to be transmitted.
+      # bytes:     A byte-string which contains the instruction to be transmitted; 
+      #            or a boolean value to send a single bit repeatedly.
       # bit_count: The total amount of bits to be transmitted.
       #
       #
-      def transmit_in_state(state_before, bytes, bit_count, state_after=nil)
+      def transmit_in_state(state_before, value, bit_count, state_after=nil)
 
         #Put the device into the desired state.
         self.tap_state = state_before
 
         #Transmit the data, and recieve the accompanying response.
-        response = LowLevel::JTAG::transmit(@device.handle, false, bytes, bit_count)
+        response = LowLevel::JTAG::transmit(@device.handle, false, value, bit_count)
 
         #If a state_after was provided, place the device into that state.
         unless state_after.nil?
