@@ -3,7 +3,6 @@
 #
 
 require 'adept/jtag'
-require 'adept/jtag/xilinx_device'
 
 module Adept
   module JTAG

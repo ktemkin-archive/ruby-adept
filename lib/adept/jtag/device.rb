@@ -102,6 +102,14 @@ module Adept
       # All other devices in the scan chain are placed into BYPASS.
       #
       def instruction=(instruction)
+
+        #If we were provided an instruction name, look up the corresponding instruction.
+        instruction = self.class::Instructions[instruction] if instruction.kind_of?(Symbol)
+  
+        #If we have a packable number, pack it into a byte-string.
+        instruction = [instruction].pack("C*") if instruction.kind_of?(Numeric)
+
+        #Transmit the instruction itself.
         @connection.transmit_instruction(instruction, instruction_width, true, @chain_offset)
       end
 
@@ -129,8 +137,6 @@ module Adept
         @supported_idcodes |= idcodes
 
       end
-
-
 
       #
       # Determines if a given IDCode matches a hex mask.

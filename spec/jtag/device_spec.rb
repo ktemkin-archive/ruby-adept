@@ -15,11 +15,13 @@ describe Device do
     #Create two simple test devices "stub" class.
     class DeviceA < Device
       InstructionWidth = 6
+      Instructions = { :instruct => 0b101010 }
       supports_idcode "abcdefff"
     end
 
     class DeviceB < Device
       InstructionWidth = 8
+      Instructions = { :instruct => 0b10101010 }
       supports_idcode "01020304"
     end
 
@@ -59,7 +61,7 @@ describe Device do
   describe "device communication functions" do
 
     let(:connection)  { mock(JTAG::Connection) }
-    let(:device)      { DeviceA.new("\xAB\xCD\xEF\xFF", connection, 1, 6) }
+    let(:device)      { DeviceB.new("\xAB\xCD\xEF\xFF", connection, 1, 6) }
 
 
     describe "#instruction=" do
@@ -68,6 +70,17 @@ describe Device do
         connection.should_receive(:transmit_instruction).with("\xAA", device.instruction_width, true, 6)
         device.instruction = "\xAA"
       end
+
+      it "should accept instructions in numeric format" do
+        connection.should_receive(:transmit_instruction).with("\xAA", device.instruction_width, true, 6)
+        device.instruction = 0b10101010
+      end
+
+      it "should accept symbolic names for known instructions" do
+        connection.should_receive(:transmit_instruction).with("\xAA", device.instruction_width, true, 6)
+        device.instruction = :instruct
+      end
+
 
     end
 
