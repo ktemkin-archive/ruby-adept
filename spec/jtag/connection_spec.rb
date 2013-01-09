@@ -256,11 +256,11 @@ describe JTAG::Connection do
 
     it "should return an array of idcodes, when they are received" do
       @jtag.should_receive(:receive_data).and_return("\x12\x34\x56\x78", "\xAB\xCD\xEF\xFF", "\x00\x00\x00\x00")
-      @jtag.connected_devices.should == ["\x78\x56\x34\x12","\xFF\xEF\xCD\xAB"]
+      @jtag.connected_devices.should == ["\xFF\xEF\xCD\xAB", "\x78\x56\x34\x12"]
     end
 
     it "should be able to identify the devices on a Basys2 board" do
-      @jtag.connected_devices.should == ["\xD5\x04\x50\x93", "\x11\xC1\xA0\x93"]
+      @jtag.connected_devices.should == ["\x11\xC1\xA0\x93", "\xD5\x04\x50\x93"]
     end
 
   end
