@@ -78,7 +78,7 @@ describe Device do
     it "should be able to determine the supported connections for a Basys2 board" do
 
       #We should support JTAG
-      @device.supported_connections.should include(JTAGConnection)
+      @device.supported_connections.should include(JTAG::Connection)
 
     end
 

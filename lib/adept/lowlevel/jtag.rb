@@ -50,7 +50,7 @@ module Adept
       # or nil if it does not.
       #
       def self.supported?(device)
-        port_count(device).nonzero?
+        port_count(device.handle).nonzero?
       end
 
       #
@@ -306,11 +306,11 @@ module Adept
         raise ArgumentError, "You must specify the same amount of bytes for TDI and TMS!" if tdi.size != tms.size
 
         #If we were given a string-like object, handle it byte by byte.
-        tms = tms.bytes if tms.respond_to?(:bytes)
-        tdi = tdi.bytes if tdi.respond_to?(:bytes)
+        tms_bytes = tms.bytes if tms.respond_to?(:bytes)
+        tdi_bytes = tdi.bytes if tdi.respond_to?(:bytes)
 
         #Merge the two arrays into a single array of byte-pairs.
-        byte_pairs = tms.zip(tdi)
+        byte_pairs = tms_bytes.zip(tdi_bytes)
 
         #Convert each of the byte pairs into pairs of interleave bytes.
         interleave = byte_pairs.map { |tms, tdi| interleave_tms_tdi_byte_pair(tms, tdi) }
