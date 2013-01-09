@@ -3,6 +3,7 @@
 #
 
 require 'adept/jtag'
+require 'adept/jtag/xilinx_device'
 
 module Adept
   module JTAG
@@ -11,8 +12,9 @@ module Adept
     # Base module for JTAG devices.
     #
     class FPGA < Device
+      extend XilinxDevice
 
-      IDCodeSpartan3E = "5045093"
+      IDCodeSpartan3E = "1c1a093"
       SupportedIDCodes = [IDCodeSpartan3E]
 
       #
@@ -26,6 +28,13 @@ module Adept
         #A device is supported if it has a known IDCode.
         SupportedIDCodes.include?(idcode)
 
+      end
+
+      #
+      # Return the instruction width of a Xilinx FPGA.
+      # 
+      def instruction_width
+        return 6
       end
 
 

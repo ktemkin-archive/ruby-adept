@@ -44,7 +44,8 @@ module Adept
         #instruction register
         reset_target
 
-        idcodes = []
+        devices = []
+        chain_length = 0
 
         #Loop until we've enumerated all devices in the JTAG chain.
         loop do
@@ -55,13 +56,19 @@ module Adept
           #If we've recieved the special "null" IDcode, we've finished enumerating.
           break if idcode == "\x00\x00\x00\x00"
 
-          #Otherwise, add this idcode to the list and continue.
-          idcodes << idcode.reverse
+          #Otherwise, add this idcode to the list...
+          devices << JTAG::Device.from_idcode(idcode.reverse, self, chain_length)
+
+          #... add its width the the known scan-chain length
+          chain_length += devices.last.instruction_width
 
         end
 
+        #Update the internal chain-length.
+        @chain_length = chain_length
+
         #Return the list of IDCodes.
-        idcodes.reverse
+        devices.reverse
 
       end
 

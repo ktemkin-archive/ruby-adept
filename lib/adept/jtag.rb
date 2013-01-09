@@ -6,3 +6,4 @@ require 'adept/jtag/device'
 
 #Known JTAG devices.
 require 'adept/jtag/fpga'
+require 'adept/jtag/platform_flash'

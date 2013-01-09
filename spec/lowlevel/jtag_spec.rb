@@ -189,7 +189,6 @@ describe LowLevel::JTAG do
 
       end
 
-
     end
   end
 end

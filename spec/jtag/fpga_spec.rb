@@ -12,7 +12,7 @@ include Adept::JTAG
 describe FPGA do
 
   it "should indicatesupport the XCS250E-CP132" do
-    FPGA.supports?("\xD5\x04\x50\x93").should be_true
+    FPGA.supports?("\x11\xc1\xa0\x93").should be_true
   end
 
 end

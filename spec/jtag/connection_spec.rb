@@ -254,13 +254,29 @@ describe JTAG::Connection do
       @jtag.connected_devices.should == []
     end
 
-    it "should return an array of idcodes, when they are received" do
+    it "should return an array of devices if IDcodes are recieved" do
       @jtag.should_receive(:receive_data).and_return("\x12\x34\x56\x78", "\xAB\xCD\xEF\xFF", "\x00\x00\x00\x00")
-      @jtag.connected_devices.should == ["\xFF\xEF\xCD\xAB", "\x78\x56\x34\x12"]
+      @jtag.connected_devices.each { |d| d.class.kind_of?(Device)}
+    end
+
+    it "should return devices with the appropriate ID codes" do
+      @jtag.should_receive(:receive_data).and_return("\x12\x34\x56\x78", "\xAB\xCD\xEF\xFF", "\x00\x00\x00\x00")
+      idcodes = @jtag.connected_devices.collect { |d| d.idcode }
+      idcodes.should == ["\xFF\xEF\xCD\xAB", "\x78\x56\x34\x12"]
     end
 
     it "should be able to identify the devices on a Basys2 board" do
-      @jtag.connected_devices.should == ["\x11\xC1\xA0\x93", "\xD5\x04\x50\x93"]
+
+      devices = @jtag.connected_devices
+
+      #Check the ID Codes...
+      idcodes = devices.collect { |d| d.idcode }
+      idcodes.should == ["\x11\xC1\xA0\x93", "\xD5\x04\x50\x93"]
+
+      #... and the types.
+      types = devices.collect { |d| d.class }
+      types.should == [JTAG::FPGA, JTAG::PlatformFlash]
+
     end
 
   end

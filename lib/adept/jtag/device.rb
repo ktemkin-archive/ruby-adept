@@ -34,7 +34,7 @@ module Adept
       #   can be transmitted to this device- equal to the amount of bits to the _right_ of the
       #   active device on the scan chain.
       #
-      def self.device_from_idcode(idcode, connection, scan_offset)
+      def self.from_idcode(idcode, connection, scan_offset)
 
         #Find the first device type which supports the IDCode.
         device_type = @device_types.find { |type| type.supports?(idcode) }
@@ -45,6 +45,16 @@ module Adept
         #Otherwise, instantiate tha new device from the device type.
         device_type.new(idcode, connection, scan_offset)
 
+      end
+
+      #
+      # Returns the expected instruction width of the JTAG device.
+      #
+      # In this case, we don't know what the instruction width will be,
+      # so we'll assume the minimum possible width of four bits.
+      #
+      def instruction_width
+        return 4
       end
 
       #
@@ -62,6 +72,7 @@ module Adept
         @connection = connection
         @scan_offset = scan_offset
       end
+
 
     end
 
