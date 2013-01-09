@@ -7,4 +7,4 @@ require 'adept/lowlevel/device_manager'
 require 'adept/lowlevel/jtag'
 
 require 'adept/device'
-require 'adept/jtag_connection'
+require 'adept/jtag'

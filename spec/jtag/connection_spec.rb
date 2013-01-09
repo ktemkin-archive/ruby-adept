@@ -12,7 +12,7 @@ include JTAG::TAPStates
 #
 # Tests for the basic JTAG test connection.
 #
-describe JTAGConnection do
+describe JTAG::Connection do
 
   PathToShiftIR = ["01100".reverse.to_i(2)]
   PathToShiftDR = ["0100".reverse.to_i(2)]
@@ -31,7 +31,7 @@ describe JTAGConnection do
     LowLevel::JTAG::rspec_reset
 
     #And establish a new JTAG Connection
-    @jtag = JTAGConnection.new(@device)
+    @jtag = JTAG::Connection.new(@device)
     @jtag.reset_target
 
   end

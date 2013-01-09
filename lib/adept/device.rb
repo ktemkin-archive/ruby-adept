@@ -1,5 +1,5 @@
 
-require 'adept/jtag_connection'
+require 'adept/jtag'
 require 'adept/lowlevel'
 
 module Adept
@@ -10,7 +10,7 @@ module Adept
   class Device
 
     #A list of all supported connection classes.
-    SUPPORTED_CONNECTIONS = [JTAGConnection]
+    SUPPORTED_CONNECTIONS = [JTAG::Connection]
 
     #Get an easy reference to the adept Device Manager API.
     DeviceManager = LowLevel::DeviceManager
