@@ -22,6 +22,7 @@ module Adept
 
         #Initialize the chain to zero until enumeration occurs.
         @chain_length = 0
+        @devices_in_chain = 0
 
         #... open a JTAG connection.
         LowLevel::JTAG::EnableEx(@device.handle, port_number)
@@ -105,16 +106,25 @@ module Adept
       # the JTAG instruction register.
       #
       # bytes:     A byte-string which contains the instruction to be transmitted.
-      # bit_count: The total amount of bits to be transmitted.
-      # pad_to_chain_length: If set, any bits not set in the chain 
+      # bit_count: The total amount of bits to be transmitted from the byte string.
       #
-      # do_not_finish: If set, the transmission window will be "left open", so additional instructions can be transmitted.
+      # pad_to_chain_length:
+      #   If set, the transmitted data will be suffixed with logic '1's until the chain length has been met.
+      #   This allows the transmitter to easily put devices to the "left" of  afttarget device into bypass.
+      #
+      # prefix_with_ones:
+      #   Prefixes the transmitted data with the specified amount of logic '1's. Prefixing is skipped if this parameter
+      #   is not provided, or is set to zero. This allows the transmitter to easily put devices to the "right" of a
+      #   target device into bypass.
+      #
+      # do_not_finish: 
+      #   If set, the device will be left in the ShiftIR state, so additional instructions data be transmitted.
       #
       def transmit_instruction(bytes, bit_count, pad_to_chain_length=false, prefix_with_ones=0, do_not_finish=false)
 
         #If the pad-to-chain length option is selected, compute the total amount of padding required.
         #Otherwise, set the required padding to zero.
-        padding_after = pad_to_chain_length ? [@chain_length - prefix_with_ones - bit_count, 0].min : 0
+        padding_after = pad_to_chain_length ? [@chain_length - prefix_with_ones - bit_count, 0].max : 0
 
         #Move to the Exit1IR state after transmission, allowing the recieved data to be processed,
         #unless the do_not_finish value is set.
@@ -130,21 +140,33 @@ module Adept
       # the JTAG data register.
       #
       # bytes:     A byte-string which contains the instruction to be transmitted.
-      # bit_count: The total amount of bits to be transmitted.
+      # bit_count: The total amount of bits to be transmitted from the byte string.
       #
-      # do_not_finish: If set, the transmission window will be "left open", so additional data can be transmitted.
+      # pad_to_chain_length:
+      #   If set, the transmitted data will be suffixed with logic '1's until the chain length has been met,
+      #   *assuming that all devices other than the single target device are in bypass*.
+      #   This allows the transmitter to easily fill the bypass registers of all additional devices with zeroes.
+      #
+      # prefix_with_zeroes:
+      #   Prefixes the transmitted data with the specified amount of logic '0's. Prefixing is skipped if this parameter
+      #   is not provided, or is set to zero. 
+      #
+      # do_not_finish: 
+      #   If set, the device will be left in the ShiftIR state, so additional instructions data be transmitted.
       #
       def transmit_data(bytes, bit_count, pad_to_chain_length=false, prefix_with_zeroes=0, do_not_finish=false)
 
         #If the pad-to-chain length option is selected, compute the total amount of padding required.
         #Otherwise, set the required padding to zero.
-        padding_after = pad_to_chain_length ? [@devices_in_chain - prefix_with_zeroes - 1, 0].min : 0
+        padding_after = pad_to_chain_length ? [@devices_in_chain - prefix_with_zeroes - 1, 0].max : 0
 
         #Move to the Exit1IR state after transmission, allowing the recieved data to be processed,
         #unless the do_not_finish value is set.
         state_after = do_not_finish ? nil : Exit1DR
 
         #Transmit the actual instruction.
+        #TODO: Prefixing here may be unnecessary- as it just serves to fill Bypass registers for devices that
+        #aren't being used. Potentially remove?
         transmit_in_state(ShiftDR, bytes, bit_count, state_after, false, prefix_with_zeroes, padding_after)
 
       end
@@ -240,7 +262,7 @@ module Adept
         response = LowLevel::JTAG::transmit(@device.handle, false, value, bit_count)
 
         #If we've been instructed to pad before the transmission, do so.
-        LowLevel::JTAG::transmit(@device.handle, false, pad_with, pad_before) unless pad_after.zero?
+        LowLevel::JTAG::transmit(@device.handle, false, pad_with, pad_after) unless pad_after.zero?
 
         #If a state_after was provided, place the device into that state.
         unless state_after.nil?

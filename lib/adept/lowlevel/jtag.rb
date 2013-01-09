@@ -31,12 +31,12 @@ module Adept
 
       #
       # Returns the number of JTAG ports the given device offers.
-      # 
+      #
       def self.port_count(device)
-        
+
         #Create a pointer to a new Int32 in memory...
         count_pointer = FFI::MemoryPointer.new(:int32)
-        
+
         #... and fill it with the number of available JTAG ports.
         GetPortCount(device, count_pointer)
 
@@ -58,16 +58,16 @@ module Adept
       # Keys include:
       #   -set_speed, which sets the bit-rate of the JTAG connection.
       #   -set_pins, which sets the values of the JTAG pins directly.
-      # 
+      #
       def self.supported_calls(device, port_number)
-       
+
         #Create a pointer to a new DWORD...
         properties_pointer = FFI::MemoryPointer.new(:ulong)
 
         #... and fill it with a bit-vector indicates supports for various system calls.
         GetPortProperties(device, port_number, properties_pointer)
 
-        #Extract the property bit-vector from the 
+        #Extract the property bit-vector from the
         properties = properties_pointer.get_ulong(0)
 
         #Return a hash which indicates which calls are supported.
@@ -80,8 +80,8 @@ module Adept
 
       #
       # JTAG Enable/Disable calls.
-      # 
-      
+      #
+
       #Enable the JTAG port with the given number. Only one JTAG device can be active at a time!
       attach_adept_function :EnableEx, [:ulong, :int32]
 
@@ -89,9 +89,9 @@ module Adept
       attach_adept_function :Disable, [:ulong]
 
       #
-      # JTAG 
+      # JTAG
       #
-      
+
       attach_adept_function :PutTdiBits, [:ulong, :bool, :pointer, :pointer, :ulong, :bool]
       attach_adept_function :PutTmsBits, [:ulong, :bool, :pointer, :pointer, :ulong, :bool]
       attach_adept_function :PutTmsTdiBits, [:ulong, :pointer, :pointer, :ulong, :bool]
@@ -123,7 +123,7 @@ module Adept
 
         #Otherwise, passively recieve data.
         else
-          receive(handle, tms, tdi, bit_count) 
+          receive(handle, tms, tdi, bit_count)
         end
 
       end
@@ -152,7 +152,7 @@ module Adept
       # Returns the values recieved on TDO during the transmission.
       #
       def self.transmit_mode_select(handle, tms, tdi_value, bit_count)
-        specialized_transmit(:PutTmsBits, handle, tdi_value, tms, bit_count) 
+        specialized_transmit(:PutTmsBits, handle, tdi_value, tms, bit_count)
       end
 
       #
@@ -166,7 +166,7 @@ module Adept
       # Returns the values recieved on TDO during the transmission.
       #
       def self.transmit_data(handle, tms_value, tdi, bit_count)
-        specialized_transmit(:PutTdiBits, handle, tms_value, tdi, bit_count) 
+        specialized_transmit(:PutTdiBits, handle, tms_value, tdi, bit_count)
       end
 
       #
@@ -178,12 +178,12 @@ module Adept
       # bit_count: The total number of bits to be received.
       #
       def self.receive(handle, tms_value, tdi_value, bit_count)
-      
+
         #Determine the number of bytes to be transmitted...
         receive_bytes = (bit_count / 8.0).ceil
 
         #Transmit the given tms values...
-        received = transmit_with(nil, receive_bytes) do |send_buffer, receive_buffer| 
+        received = transmit_with(nil, receive_bytes) do |send_buffer, receive_buffer|
           GetTdoBits(handle, tms_value, tdi_value, receive_buffer, bit_count, false)
         end
 
@@ -200,9 +200,9 @@ module Adept
       #
       # device: A reference to a Digilent Adept device.
       #
-      # interleaved: 
-      #   An array or binary string of single-byte values, in the format specified in the 
-      #   DJTG reference manual. Each byte in the interleaved array should contain a _nibble_ 
+      # interleaved:
+      #   An array or binary string of single-byte values, in the format specified in the
+      #   DJTG reference manual. Each byte in the interleaved array should contain a _nibble_
       #   of TMS, and a nibble of TDI, in the following order:
       #
       #   TMS[3], TDI[3], TMS[2], TDI[2], TMS[1], TDI[1], TMS[0], TMS[0]
@@ -216,7 +216,7 @@ module Adept
         #Note that we're expecting to recieve about half as many bits as are contained in the
         #interleave, as half of them are transmitted on TMS, and the other half on TDI.
         #
-        receive_data = transmit_with(interleave, interleave.size / 2) do |send_buffer, receive_buffer| 
+        receive_data = transmit_with(interleave, interleave.size / 2) do |send_buffer, receive_buffer|
           PutTmsTdiBits(handle, send_buffer, receive_buffer, bit_count, false)
         end
 
@@ -231,7 +231,7 @@ module Adept
       # Helper function which calls the specialized Adept transmit functions.
       #
       # handle: The device with which to transmit.
-      # tms: The tmi value to be provided to the 
+      # tms: The tmi value to be provided to the
       # tdi: A string (or array) of bytes, which will be transmitted over TDI.
       # bit_count: The total number of bits to be transmitted.
       #
@@ -239,9 +239,9 @@ module Adept
       #
 
       def self.specialized_transmit(base_function_name, handle, static_value, dynamic_value, bit_count)
-       
+
         #Transmit the given values.
-        received = transmit_with(dynamic_value) do |send_buffer, receive_buffer| 
+        received = transmit_with(dynamic_value) do |send_buffer, receive_buffer|
           send(base_function_name, handle, static_value, send_buffer, receive_buffer, bit_count, false)
         end
 
@@ -278,8 +278,8 @@ module Adept
         receive_buffer = FFI::MemoryPointer.new(receive_size)
 
         #If transmit data was provided, place it in contiguous memory and get a pointer to it.
-        unless transmit_data.nil? 
-          send_buffer = FFI::MemoryPointer.new(transmit_data.bytesize) 
+        unless transmit_data.nil?
+          send_buffer = FFI::MemoryPointer.new(transmit_data.bytesize)
           send_buffer.put_bytes(0, transmit_data)
         end
 
@@ -297,7 +297,7 @@ module Adept
       #
       # tms: A string (or array of bytes) to be used as TMS values in the interleave.
       # tdi: A string (or array of bytes) to be used as TDI values in the interleave.
-      # 
+      #
       # Returns a byte-string in the format used by transmit_interleave.
       #
       def self.interleave_tms_tdi_bytes(tms, tdi)
@@ -306,14 +306,14 @@ module Adept
         raise ArgumentError, "You must specify the same amount of bytes for TDI and TMS!" if tdi.size != tms.size
 
         #If we were given a string-like object, handle it byte by byte.
-        tms_bytes = tms.bytes if tms.respond_to?(:bytes)
-        tdi_bytes = tdi.bytes if tdi.respond_to?(:bytes)
+        tms = tms.bytes if tms.respond_to?(:bytes)
+        tdi = tdi.bytes if tdi.respond_to?(:bytes)
 
         #Merge the two arrays into a single array of byte-pairs.
-        byte_pairs = tms_bytes.zip(tdi_bytes)
+        byte_pairs = tms.zip(tdi)
 
         #Convert each of the byte pairs into pairs of interleave bytes.
-        interleave = byte_pairs.map { |tms, tdi| interleave_tms_tdi_byte_pair(tms, tdi) }
+        interleave = byte_pairs.map { |tms_byte, tdi_byte| interleave_tms_tdi_byte_pair(tms_byte, tdi_byte) }
 
         #And flatten the pairs into a long array of interleave bytes.
         interleave.flatten.pack('C*').force_encoding('UTF-8')
@@ -330,10 +330,10 @@ module Adept
         tms = tms.ord
         tdi = tdi.ord
 
-        #Interleave the lower and upper nibbles of each of the two values. 
+        #Interleave the lower and upper nibbles of each of the two values.
         lower = interleave_tms_tdi_nibble_pair(tms, tdi)
         upper = interleave_tms_tdi_nibble_pair(tms >> 4, tdi >> 4)
-      
+
         #Return the interleave bytes in little endian order.
         return lower, upper
 

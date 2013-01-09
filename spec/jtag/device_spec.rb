@@ -12,13 +12,15 @@ describe Device do
 
   before :all do
 
-    #Create a simple test device "stub" class.
-    class ADevice < Device
+    #Create two simple test devices "stub" class.
+    class DeviceA < Device
+      def self.supports?(idcode); idcode == "\xAB\xCD\xEF\xFF"; end
+      def instruction_width; return 6; end
+    end
 
-      def self.supports?(idcode)
-        idcode == "\xAB\xCD\xEF\xFF"
-      end
-
+    class DeviceB < Device
+      def self.supports?(idcode); idcode == "\x01\x02\x03\x04"; end
+      def instruction_width; return 8; end
     end
 
   end
@@ -27,7 +29,7 @@ describe Device do
 
     it "should keep track of all classes which extend JTAGDevice" do
       device_types = Device.instance_variable_get(:@device_types)
-      device_types.should include(ADevice)
+      device_types.should include(DeviceA, DeviceB)
     end
 
   end
@@ -35,7 +37,8 @@ describe Device do
   describe "#device_from_idcode" do
 
     it "should be able to create devices with the appropriate type given their IDCode" do
-      JTAG::Device.from_idcode("\xAB\xCD\xEF\xFF", nil, 0, 0).class.should == ADevice
+      JTAG::Device.from_idcode("\xAB\xCD\xEF\xFF", nil, 0, 0).class.should == DeviceA
+      JTAG::Device.from_idcode("\x01\x02\x03\x04", nil, 0, 0).class.should == DeviceB
     end
 
     it "should create a generic JTAGDevice when its IDCode isn't recognized" do
@@ -44,5 +47,28 @@ describe Device do
 
   end
 
+  describe "device communication functions" do
 
+    let(:connection)  { mock(JTAG::Connection) }
+    let(:device)      { DeviceA.new("\xAB\xCD\xEF\xFF", connection, 1, 6) }
+
+
+    describe "#instruction=" do
+
+      it "should set the target device's instruction, and place the rest of the chain into bypass"  do
+        connection.should_receive(:transmit_instruction).with("\xAA", device.instruction_width, true, 6)
+        device.instruction = "\xAA"
+      end
+
+    end
+
+    describe "#transmit_data" do
+
+      it "should send the target device's data, prefixed with enough zeroes to pass through the preceeding devices' bypass registers" do
+        connection.should_receive(:transmit_data).with("\xAA", 7, true, kind_of(Numeric))
+        device.transmit_data("\xAA", 7)
+      end
+
+    end
+  end
 end

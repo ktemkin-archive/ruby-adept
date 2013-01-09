@@ -17,7 +17,7 @@ module Adept
       @device_types = []
 
       #
-      # Once a class inherits from the JTAG Device class, register it as 
+      # Once a class inherits from the JTAG Device class, register it as
       # providing a device-type.
       #
       def self.inherited(klass)
@@ -51,7 +51,7 @@ module Adept
 
       end
 
-   
+
       #
       # Initializes a new JTAG Device.   #
       # Returns the expected instruction width of the JTAG device.
@@ -90,18 +90,22 @@ module Adept
 
       #
       # Activate the device, and set its current operating instruction.
-      # All other devices in the scan chain are placed in BYPASS.
+      # All other devices in the scan chain are placed into BYPASS.
       #
-      def set_instruction(instruction)
-        @connection.transmit_instruction(instruction, instruction_width, true, @chain_offset) 
+      def instruction=(instruction)
+        @connection.transmit_instruction(instruction, instruction_width, true, @chain_offset)
       end
+
+      #
+      # TODO: Handle instruction readback, by rotating instructions through the device.
+      #
 
       #
       # Send data directly to the given device. Assumes the current device is
       # active, and all other devices are in bypass.
       #
       def transmit_data(data, bit_count)
-        @connectoin.transmit_data(instruction, bit_count, true, @position_in_chain)
+        @connection.transmit_data(data, bit_count, true, @position_in_chain)
       end
 
     end
