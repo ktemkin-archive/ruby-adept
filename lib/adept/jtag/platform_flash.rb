@@ -12,18 +12,9 @@ module Adept
     # Base module for JTAG devices.
     #
     class PlatformFlash < Device
-      extend XilinxDevice
 
-      IDCodePlatformFlash = "5045093"
-      SupportedIDCodes = [IDCodePlatformFlash]
-
-      #
-      # Return the instruction width for a Xilinx Platform Flash device.
-      # 
-      def instruction_width
-        return 8
-      end
-
+      InstructionWidth = 8
+      supports_idcode "X5045093"
 
     end
 

@@ -14,13 +14,13 @@ describe Device do
 
     #Create two simple test devices "stub" class.
     class DeviceA < Device
-      def self.supports?(idcode); idcode == "\xAB\xCD\xEF\xFF"; end
-      def instruction_width; return 6; end
+      InstructionWidth = 6
+      supports_idcode "abcdefff"
     end
 
     class DeviceB < Device
-      def self.supports?(idcode); idcode == "\x01\x02\x03\x04"; end
-      def instruction_width; return 8; end
+      InstructionWidth = 8
+      supports_idcode "01020304"
     end
 
   end
@@ -30,6 +30,15 @@ describe Device do
     it "should keep track of all classes which extend JTAGDevice" do
       device_types = Device.instance_variable_get(:@device_types)
       device_types.should include(DeviceA, DeviceB)
+    end
+
+  end
+
+  describe "#instruction_width" do
+
+    it "should return the correct instruction width a given device" do
+      DeviceA.new(nil, nil, 0, 0).instruction_width.should == 6
+      DeviceB.new(nil, nil, 0, 0).instruction_width.should == 8
     end
 
   end
