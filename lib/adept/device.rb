@@ -1,6 +1,8 @@
 
-require 'adept/jtag'
 require 'adept/lowlevel'
+
+require 'adept/connection_provider'
+require 'adept/jtag'
 
 module Adept
 
@@ -8,9 +10,6 @@ module Adept
   # Basic interface to a Digilent Adept device.
   # 
   class Device
-
-    #A list of all supported connection classes.
-    SUPPORTED_CONNECTIONS = [JTAG::Connection]
 
     #Get an easy reference to the adept Device Manager API.
     DeviceManager = LowLevel::DeviceManager
@@ -23,8 +22,7 @@ module Adept
 
     #Allow access to the device's handle, for now.
     attr_reader :handle
-
-
+    
     #
     # Factory method which returns a connection to the device with the given name,
     # or nil if no devices with that name could be found.
@@ -78,7 +76,7 @@ module Adept
     # Returns a list of connection methods supported by the current device.
     #
     def supported_connections
-      SUPPORTED_CONNECTIONS.select { |connection| connection.supported_by?(self) }
+      ConnectionProvider.providers.select { |connection| connection.supported_by?(@handle) }
     end
 
     #

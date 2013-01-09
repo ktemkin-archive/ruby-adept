@@ -50,7 +50,7 @@ module Adept
       # or nil if it does not.
       #
       def self.supported?(device)
-        port_count(device.handle).nonzero?
+        port_count(device).nonzero?
       end
 
       #

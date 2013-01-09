@@ -65,7 +65,7 @@ describe LowLevel::JTAG do
 
     #Before each test, create a connection to a Basys board
     before :each do
-      @device = Device.by_name('Basys2')
+      @device = Adept::Device.by_name('Basys2')
     end
 
     #Close the Basys connection after each test.

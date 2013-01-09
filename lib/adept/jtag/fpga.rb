@@ -21,7 +21,7 @@ module Adept
       {
         :extest      => 0b001111,
         :sample      => 0b000001,
-        :preload     => 0b000001,  #Same as :sample
+        :preload     => 0b000001,  # Same as :sample
         :user1       => 0b000010,  # Not available until after configuration
         :user2       => 0b000011,  # Not available until after configuration
         :cfg_out     => 0b000100,  # Not available during configuration with another mode.
@@ -39,6 +39,13 @@ module Adept
         :isc_noop    => 0b010101,
         :isc_disable => 0b010110
       }
+
+      #
+      # Verifies the device's IDcode using the explicit IDCode instruction.
+      #
+      def verify_idcode
+
+      end
 
 
     end

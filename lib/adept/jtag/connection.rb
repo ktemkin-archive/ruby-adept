@@ -8,7 +8,8 @@ module Adept
     #
     # Represents a connection to a JTAG device.
     #
-    class Connection
+    class Connection 
+      extend ConnectionProvider
 
       attr_reader :tap_state
 

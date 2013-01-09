@@ -16,7 +16,6 @@ module Adept
       #This should be re-defined in each inheriting class.
       InstructionWidth = 4
 
-
       # An internal list of device types which can be recognized
       # on a JTAG bus.
       @device_types = []

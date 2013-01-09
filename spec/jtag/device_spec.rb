@@ -2,7 +2,6 @@
 require 'adept/jtag'
 
 include Adept
-include JTAG
 
 #
 # Tests for the JTAGDevice base module.
@@ -13,13 +12,13 @@ describe Device do
   before :all do
 
     #Create two simple test devices "stub" class.
-    class DeviceA < Device
+    class DeviceA < JTAG::Device
       InstructionWidth = 6
       Instructions = { :instruct => 0b101010 }
       supports_idcode "abcdefff"
     end
 
-    class DeviceB < Device
+    class DeviceB < JTAG::Device
       InstructionWidth = 8
       Instructions = { :instruct => 0b10101010 }
       supports_idcode "01020304"
