@@ -91,5 +91,17 @@ describe Device do
       end
 
     end
+
+
+    describe "#receive_data" do
+
+      it "should receieve data from the target device by sending an appropriately long string of zeroes" do
+        connection.should_receive(:transmit_data).with(false, 7, true, kind_of(Numeric))
+        device.receive_data(7)
+      end
+
+    end
+
+
   end
 end

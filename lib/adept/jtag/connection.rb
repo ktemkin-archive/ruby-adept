@@ -166,8 +166,6 @@ module Adept
         state_after = do_not_finish ? nil : Exit1DR
 
         #Transmit the actual instruction.
-        #TODO: Prefixing here may be unnecessary- as it just serves to fill Bypass registers for devices that
-        #aren't being used. Potentially remove?
         transmit_in_state(ShiftDR, bytes, bit_count, state_after, false, prefix_with_zeroes, padding_after)
 
       end

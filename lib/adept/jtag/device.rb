@@ -113,16 +113,27 @@ module Adept
       end
 
       #
-      # TODO: Handle instruction readback, by rotating instructions through the device.
+      # TODO: Handle instruction readback, by rotating instructions through the device.?
       #
 
       #
-      # Send data directly to the given device. Assumes the current device is
-      # active, and all other devices are in bypass.
+      # Send data directly to (and receive data directly from) the given device.
+      # Assumes the current device is active, and all other devices are in bypass.
       #
       def transmit_data(data, bit_count)
         @connection.transmit_data(data, bit_count, true, @position_in_chain)
       end
+
+      #
+      # Recieves data directly from the given device by sending the device an 
+      # appropriately-sized string of zeroes.
+      # Assumes the current device is active, and all other devices are in bypass.
+      # 
+      #
+      def receive_data(bit_count)
+        @connection.transmit_data(false, bit_count, true, @position_in_chain)
+      end
+
 
       private
 

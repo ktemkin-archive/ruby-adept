@@ -45,6 +45,15 @@ module Adept
       #
       def verify_idcode
 
+        #Put the device into IDCode retrival mode.
+        self.instruction = :idcode
+
+        #And attempt to retrieve the 32-bit IDcode.
+        idcode = receive_data(32).reverse
+
+        #If the two IDcodes don't match, raise an error.
+        raise JTAG::Error, "IDCode verification failed! Expected: #{@idcode.unpack("H*")}, receieved #{idcode.unpack("H*")}. " unless idcode == @idcode
+
       end
 
 

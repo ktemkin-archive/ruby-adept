@@ -1,4 +1,6 @@
 
+require 'adept/jtag/error'
+
 #Basic components.
 require 'adept/jtag/tap_states'
 require 'adept/jtag/connection'
