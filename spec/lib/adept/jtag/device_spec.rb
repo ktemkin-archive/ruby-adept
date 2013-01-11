@@ -29,7 +29,7 @@ describe Device do
   describe ".included" do
 
     it "should keep track of all classes which extend JTAGDevice" do
-      device_types = Device.instance_variable_get(:@device_types)
+      device_types = JTAG::Device.instance_variable_get(:@device_types)
       device_types.should include(DeviceA, DeviceB)
     end
 
@@ -52,7 +52,7 @@ describe Device do
     end
 
     it "should create a generic JTAGDevice when its IDCode isn't recognized" do
-      JTAG::Device.from_idcode("\x00\x00\x00\x00", nil, 0, 0).class.should == Device
+      JTAG::Device.from_idcode("\x00\x00\x00\x00", nil, 0, 0).class.should == JTAG::Device
     end
 
   end

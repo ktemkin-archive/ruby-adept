@@ -189,6 +189,16 @@ describe LowLevel::JTAG do
 
       end
 
+      it "should be able to set the speed of a JTAG connection" do
+        LowLevel::JTAG::set_speed(@device.handle, 62500).should == 62500
+      end
+
+      it "should be able to read the speed of a JTAG connection" do
+        actual_speed = LowLevel::JTAG::set_speed(@device.handle, 62500)
+        LowLevel::JTAG::get_speed(@device.handle).should == actual_speed
+      end
+
+
     end
   end
 end

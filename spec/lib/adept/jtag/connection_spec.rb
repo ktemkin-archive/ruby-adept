@@ -66,7 +66,7 @@ describe JTAG::Connection do
 
     it "should ask the target device to move to the appropriate state" do
       #Ensure that our virtual target is placed into the ShiftIR state.
-      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), PathToShiftIR, false, 5)
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), PathToShiftIR, false, 5, false)
       @jtag.tap_state = ShiftIR
     end
 
@@ -86,7 +86,7 @@ describe JTAG::Connection do
     it "should move the target into the ShiftIR state before transmission" do
 
       #Ensure that our virtual target is placed into the ShiftIR state _prior_ to transmission.
-      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), PathToShiftIR, false, 5).ordered
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), PathToShiftIR, false, 5, false).ordered
       LowLevel::JTAG::should_receive(:transmit_data).ordered
       LowLevel::JTAG::should_receive(:transmit_mode_select).with(any_args).ordered
 
@@ -94,8 +94,8 @@ describe JTAG::Connection do
 
     end
 
-    it "should transmit the relevant data" do
-      LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, [0x09], 6)
+    it "should transmit the relevant instruction" do
+      LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, [0x09], 6, false)
       @jtag.transmit_instruction([0x09], 6)
     end
 
@@ -104,7 +104,7 @@ describe JTAG::Connection do
       #Ensure that our virtual target is placed into the Exit1 state _after_ transmission.
       LowLevel::JTAG::should_receive(:transmit_mode_select).with(any_args).ordered
       LowLevel::JTAG::should_receive(:transmit_data).ordered
-      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), [1], false, 1).ordered
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), [1], false, 1, false).ordered
 
       @jtag.transmit_instruction([0x09], 6)
 
@@ -121,8 +121,8 @@ describe JTAG::Connection do
       @jtag.instance_variable_set(:@chain_length, 40)
 
       #And ensure that 33 ones are transmitted after the data itself.
-      LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, "\xAA", 7).ordered
-      LowLevel::JTAG::should_receive(:receive).with(kind_of(Numeric), false, true, 33).ordered
+      LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, "\xAA", 7, false).ordered
+      LowLevel::JTAG::should_receive(:transmit_constants).with(kind_of(Numeric), false, true, 33, false).ordered
 
       @jtag.transmit_instruction("\xAA", 7, true)
 
@@ -131,8 +131,8 @@ describe JTAG::Connection do
     it "should correctly prefix the transmitted instruction with ones, when requested" do
 
       #And ensure that 20 ones are transmitted _before_ the instruction itself.
-      LowLevel::JTAG::should_receive(:receive).with(kind_of(Numeric), false, true, 20).ordered
-      LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, "\xAA", 7).ordered
+      LowLevel::JTAG::should_receive(:transmit_constants).with(kind_of(Numeric), false, true, 20, false).ordered
+      LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, "\xAA", 7, false).ordered
 
       @jtag.transmit_instruction("\xAA", 7, false, 20)
 
@@ -144,9 +144,9 @@ describe JTAG::Connection do
       @jtag.instance_variable_set(:@chain_length, 40)
 
       #Ensure that the 20 prefix ones are transmitted first, then the instruction, then the 13 padding ones.
-      LowLevel::JTAG::should_receive(:receive).with(kind_of(Numeric), false, true, 20).ordered
-      LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, "\xAA", 7).ordered
-      LowLevel::JTAG::should_receive(:receive).with(kind_of(Numeric), false, true, 13).ordered
+      LowLevel::JTAG::should_receive(:transmit_constants).with(kind_of(Numeric), false, true, 20, false).ordered
+      LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, "\xAA", 7, false).ordered
+      LowLevel::JTAG::should_receive(:transmit_constants).with(kind_of(Numeric), false, true, 13, false).ordered
 
       @jtag.transmit_instruction("\xAA", 7, true, 20)
 
@@ -163,7 +163,7 @@ describe JTAG::Connection do
 
 
       #Ensure that our virtual target is placed into the ShiftIR state _prior_ to transmission.
-      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), PathToShiftDR, false, 4).ordered
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), PathToShiftDR, false, 4, false).ordered
       LowLevel::JTAG::should_receive(:transmit_data).ordered
       LowLevel::JTAG::should_receive(:transmit_mode_select).with(any_args).ordered
 
@@ -172,7 +172,7 @@ describe JTAG::Connection do
     end
 
     it "should transmit the relevant data" do
-      LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, [0x09], 6)
+      LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, [0x09], 6, false)
       @jtag.transmit_data([0x09], 6)
     end
 
@@ -181,7 +181,7 @@ describe JTAG::Connection do
       #Ensure that our virtual target is placed into the Exit1 state _after_ transmission.
       LowLevel::JTAG::should_receive(:transmit_mode_select).with(any_args).ordered
       LowLevel::JTAG::should_receive(:transmit_data).ordered
-      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), [1], false, 1).ordered
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), [1], false, 1, false).ordered
 
       @jtag.transmit_data([0x09], 6)
 
@@ -199,8 +199,8 @@ describe JTAG::Connection do
 
       #And ensure that two zeroes are transmitted after the data itself, filling the bypass registers of
       #the devices before the target in the chain, and pushing the data into the right place.
-      LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, "\xAA", 7).ordered
-      LowLevel::JTAG::should_receive(:receive).with(kind_of(Numeric), false, false, 2).ordered
+      LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, "\xAA", 7, false).ordered
+      LowLevel::JTAG::should_receive(:transmit_constants).with(kind_of(Numeric), false, false, 2, false).ordered
 
       @jtag.transmit_data("\xAA", 7, true)
 
@@ -209,8 +209,8 @@ describe JTAG::Connection do
     it "should correctly prefix the transmitted data with zeroes, when requested" do
 
       #And ensure that 10 zeroes are transmitted _before_ the instruction itself.
-      LowLevel::JTAG::should_receive(:receive).with(kind_of(Numeric), false, false, 10).ordered
-      LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, "\xAA", 7).ordered
+      LowLevel::JTAG::should_receive(:transmit_constants).with(kind_of(Numeric), false, false, 10, false).ordered
+      LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, "\xAA", 7, false).ordered
 
       @jtag.transmit_data("\xAA", 7, false, 10)
 
@@ -222,9 +222,9 @@ describe JTAG::Connection do
       @jtag.instance_variable_set(:@devices_in_chain, 10)
 
       #Ensure that the 20 prefix ones are transmitted first, then the instruction, then the 4 padding zeroes.
-      LowLevel::JTAG::should_receive(:receive).with(kind_of(Numeric), false, false, 5).ordered
-      LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, "\xAA", 7).ordered
-      LowLevel::JTAG::should_receive(:receive).with(kind_of(Numeric), false, false, 4).ordered
+      LowLevel::JTAG::should_receive(:transmit_constants).with(kind_of(Numeric), false, false, 5, false).ordered
+      LowLevel::JTAG::should_receive(:transmit_data).with(kind_of(Numeric), false, "\xAA", 7, false).ordered
+      LowLevel::JTAG::should_receive(:transmit_constants).with(kind_of(Numeric), false, false, 4, false).ordered
 
       @jtag.transmit_data("\xAA", 7, true, 5) 
 
@@ -240,7 +240,7 @@ describe JTAG::Connection do
     it "should move the target into the ShiftDR state before receiving" do
 
       #Ensure that our virtual target is placed into the ShiftIR state _prior_ to transmission.
-      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), PathToShiftDR, false, 4).ordered
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), PathToShiftDR, false, 4, false).ordered
       LowLevel::JTAG::should_receive(:receive).ordered
 
       @jtag.receive_data(6, true)
@@ -248,7 +248,7 @@ describe JTAG::Connection do
     end
 
     it "should receive the relevant data" do
-      LowLevel::JTAG::should_receive(:receive).with(kind_of(Numeric), false, false, 6)
+      LowLevel::JTAG::should_receive(:receive).with(kind_of(Numeric), false, false, 6, false)
       @jtag.receive_data(6)
     end
 
@@ -257,7 +257,7 @@ describe JTAG::Connection do
       #Ensure that our virtual target is placed into the Exit1 state _after_ transmission.
       LowLevel::JTAG::should_receive(:transmit_mode_select).with(any_args).ordered
       LowLevel::JTAG::should_receive(:receive).ordered
-      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), [1], false, 1).ordered
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), [1], false, 1, false).ordered
 
       @jtag.receive_data(6)
 
@@ -266,6 +266,87 @@ describe JTAG::Connection do
     it "should leave the device in the Exit1DR state" do
       @jtag.receive_data(6)
       @jtag.tap_state.should == Exit1DR
+    end
+
+  end
+
+  #
+  # Transmit data, and advance the TAP FSM by a single state.
+  #
+  describe "#transmit_and_advance" do
+
+    it "should send the data requested in two separate transmissions: one with all but the last bit, and one with the last bit" do
+      LowLevel::JTAG::should_receive(:transmit).with(kind_of(Numeric), anything, "\xFF", 7, anything).ordered.and_return("\x00")
+      LowLevel::JTAG::should_receive(:transmit).with(kind_of(Numeric), anything, true, 1, anything).ordered
+      @jtag.send(:transmit_and_advance, true, "\xFF", 8, JTAG::TAPStates::Idle)  
+    end
+
+    it "should hold TMS at the provided constant for all but the last bit of the transmission" do
+      LowLevel::JTAG::should_receive(:transmit).with(kind_of(Numeric), true, anything, kind_of(Numeric), anything).ordered.and_return("\x00")
+      LowLevel::JTAG::should_receive(:transmit).with(any_args).ordered
+      @jtag.send(:transmit_and_advance, true, "\xFF", 8, JTAG::TAPStates::Idle)  
+    end
+
+    it "should use the provided desired-state to determine the value of TMS during transmission of the final bit" do
+      LowLevel::JTAG::should_receive(:transmit).with(any_args).ordered.and_return("\x00")
+      LowLevel::JTAG::should_receive(:transmit).with(kind_of(Numeric), false, anything, 1, anything).ordered
+      @jtag.send(:transmit_and_advance, true, "\xFF", 8, JTAG::TAPStates::Idle)  
+    end
+
+    it "should advance the TAP FSM according to the finite state machine" do
+      LowLevel::JTAG::stub!(:transmit => "\x00")
+      @jtag.send(:transmit_and_advance, true, "\xFF", 8, JTAG::TAPStates::Idle)  
+      @jtag.tap_state.should == JTAG::TAPStates::Idle
+    end
+
+    it "should not vary TMS if the state to advance towards is nil" do
+      LowLevel::JTAG::should_receive(:transmit).with(kind_of(Numeric), true, anything, kind_of(Numeric), anything).and_return("\x00")
+      LowLevel::JTAG::should_receive(:transmit).with(kind_of(Numeric), true, anything, 1, anything)
+      @jtag.send(:transmit_and_advance, true, "\xFF", 8, nil)  
+    end
+
+    it "should not advance the TAP FSM if the state to advance towards is nil" do
+      LowLevel::JTAG::stub!(:transmit => "\x00")
+      @jtag.send(:transmit_and_advance, true, "\xFF", 8, nil)  
+      @jtag.tap_state.should == JTAG::TAPStates::Reset
+    end
+
+    it "should return the combined values of the first and second transmissions" do
+      LowLevel::JTAG::should_receive(:transmit).with(any_args).and_return("\x7F", "\x01")
+      @jtag.send(:transmit_and_advance, true, "\xAA", 8, JTAG::TAPStates::Idle).should == "\xFF"
+    end
+
+    it "should correclty handle the case where it receives a single-bit input" do
+      LowLevel::JTAG::should_receive(:transmit).once
+      @jtag.send(:transmit_and_advance, true, "\xFF", 1, JTAG::TAPStates::Idle)  
+    end
+
+  end
+
+  describe "#add_bit_to_message" do
+      
+    it "should be able to merge a bit into a string of bytes" do
+      @jtag.send(:add_bit_to_message, "\x7F", 7, true).should == "\xFF"
+      @jtag.send(:add_bit_to_message, "\x7F\xFF", 15, true).should == "\xFF\xFF"
+      @jtag.send(:add_bit_to_message, "\x7F\xFF", 15, false).should == "\x7F\xFF"
+    end
+
+  end
+
+  describe "#bit_of_message" do 
+
+    it "should return the provided bit from a string message" do
+      @jtag.send(:bit_of_message, "\xAA\xAA", 0).should be_false
+      @jtag.send(:bit_of_message, "\xAA\xAA", 1).should be_true
+      @jtag.send(:bit_of_message, "\xAA\xAA", 14).should be_false
+      @jtag.send(:bit_of_message, "\xAA\xAA", 15).should be_true
+    end
+    
+    it "should return any provided boolean value directly, no matter the bit number" do
+      @jtag.send(:bit_of_message, true,  0).should be_true
+      @jtag.send(:bit_of_message, false, 0).should be_false
+      @jtag.send(:bit_of_message, true,  8).should be_true
+      @jtag.send(:bit_of_message, false, 8).should be_false
     end
 
   end
@@ -281,7 +362,7 @@ describe JTAG::Connection do
       path_to_idle = [0]
 
       #Ensure that our virtual target is placed into the ShiftIR state _prior_ to transmission.
-      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), path_to_idle, false, 1).ordered
+      LowLevel::JTAG::should_receive(:transmit_mode_select).with(kind_of(Numeric), path_to_idle, false, 1, false).ordered
       LowLevel::JTAG::should_receive(:tick).ordered
 
       @jtag.run_test(100)
@@ -289,7 +370,7 @@ describe JTAG::Connection do
     end
 
     it "should cause TCK to tick the specified number of times with TDO/TMS low" do
-      LowLevel::JTAG::should_receive(:tick).with(kind_of(Numeric), false, false, 100)
+      LowLevel::JTAG::should_receive(:tick).with(kind_of(Numeric), false, false, 100, false)
       @jtag.run_test(100)
     end
 

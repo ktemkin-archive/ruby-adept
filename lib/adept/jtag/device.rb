@@ -134,6 +134,15 @@ module Adept
         @connection.transmit_data(false, bit_count, true, @position_in_chain)
       end
 
+      #
+      # Allows the device to run its test operation for a certain amount of TCK cycles.
+      # (Delegates the run_test operation to the JTAG connection object, which is in charge
+      #  of the TAP state.)
+      #
+      def run_test(cycles) 
+        @connection.run_test(cycles)
+      end
+
 
       private
 

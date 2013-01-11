@@ -26,10 +26,10 @@ module Adept
         :user2       => 0b000011,  # Not available until after configuration
         :cfg_out     => 0b000100,  # Not available during configuration with another mode.
         :cfg_in      => 0b000101,  # Not available during configuration with another mode.
-        :intest      => 0b000111,  #                                                       
-        :usercode    => 0b001000,  #                                                       
-        :idcode      => 0b001001,  #                                                       
-        :highz       => 0b001010,  #                                                       
+        :intest      => 0b000111,                                                         
+        :usercode    => 0b001000,                                                         
+        :idcode      => 0b001001,                                                         
+        :highz       => 0b001010,                                                         
         :jprogram    => 0b001011,  # Not available during configuration with another mode.
         :jstart      => 0b001100,  # Not available during configuration with another mode.
         :jshutdown   => 0b001101,  # Not available during configuration with another mode.
@@ -44,6 +44,8 @@ module Adept
       # Verifies the device's IDcode using the explicit IDCode instruction.
       #
       def verify_idcode
+
+        @connection.reset_target
 
         #Put the device into IDCode retrival mode.
         self.instruction = :idcode

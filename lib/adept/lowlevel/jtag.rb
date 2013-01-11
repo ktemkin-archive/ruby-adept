@@ -72,8 +72,8 @@ module Adept
 
         #Return a hash which indicates which calls are supported.
         {
-          :set_speed => properties[0].nonzero?,
-          :set_pins  => properties[1].nonzero?
+          :set_speed => properties[SUPPORTS_SET_SPEED].nonzero?,
+          :set_pins  => properties[SUPPORTS_SET_PIN_STATE].nonzero?
         }
 
       end
@@ -89,7 +89,32 @@ module Adept
       attach_adept_function :Disable, [:ulong]
 
       #
-      # JTAG
+      # JTAG speed manipulation calls
+      #
+     
+      attach_adept_function :GetSpeed, [:ulong, :pointer]
+      attach_adept_function :SetSpeed, [:ulong, :ulong, :pointer]
+
+      #
+      # Attempts to set the device's speed, in Hz.
+      # Returns the actual speed set.
+      #
+      def self.get_speed(handle)
+        get_speed_out_argument { |speed_out| GetSpeed(handle, speed_out) }
+      end
+
+      #
+      # Attempts to set the device's speed, in Hz.
+      # Returns the actual speed set.
+      #
+      def self.set_speed(handle, speed)
+        get_speed_out_argument { |speed_out| SetSpeed(handle, speed, speed_out) }
+      end
+
+
+ 
+      #
+      # JTAG Transmit/Receive Calls
       #
 
       attach_adept_function :PutTdiBits, [:ulong, :bool, :pointer, :pointer, :ulong, :bool]
@@ -102,7 +127,7 @@ module Adept
       #
       # Sends (and recieves) raw data via the JTAG lines.
       #
-      def self.transmit(handle, tms, tdi, bit_count)
+      def self.transmit(handle, tms, tdi, bit_count, overlap=false)
 
         #If TMS and TDI were both provided as byte arrays, send them both.
         if tms.respond_to?(:size) and tdi.respond_to?(:size)
@@ -111,19 +136,19 @@ module Adept
           interleave = interleave_tms_tdi_bytes(tms, tdi)
 
           #And perform an interleave transmission
-          transmit_interleave(handle, interleave, bit_count)
+          transmit_interleave(handle, interleave, bit_count, overlap)
 
         #If only TMS was provided as a byte array, use the specialized version of that function.
         elsif tms.respond_to?(:size)
-          transmit_mode_select(handle, tms, tdi, bit_count)
+          transmit_mode_select(handle, tms, tdi, bit_count, overlap)
 
         #If only TDI was provided as a byte array, use the specified version of that function.
         elsif tdi.respond_to?(:size)
-          transmit_data(handle, tms, tdi, bit_count)
+          transmit_data(handle, tms, tdi, bit_count, overlap)
 
-        #Otherwise, passively recieve data.
+        #Otherwise, transmit only constant#Otherwise, transmit only constants.
         else
-          receive(handle, tms, tdi, bit_count)
+          transmit_constants(handle, tms, tdi, bit_count, overlap)
         end
 
       end
@@ -137,8 +162,8 @@ module Adept
       # tick_count: The amount of times TCK should be ticked.
       #
       #
-      def self.tick(handle, tms, tdi, tick_count)
-        ClockTck(handle, tms, tdi, tick_count, false)
+      def self.tick(handle, tms, tdi, tick_count, overlap=false)
+        ClockTck(handle, tms, tdi, tick_count, overlap)
       end
 
       #
@@ -151,8 +176,8 @@ module Adept
       #
       # Returns the values recieved on TDO during the transmission.
       #
-      def self.transmit_mode_select(handle, tms, tdi_value, bit_count)
-        specialized_transmit(:PutTmsBits, handle, tdi_value, tms, bit_count)
+      def self.transmit_mode_select(handle, tms, tdi_value, bit_count, overlap=false)
+        specialized_transmit(:PutTmsBits, handle, tdi_value, tms, bit_count, overlap)
       end
 
       #
@@ -165,8 +190,8 @@ module Adept
       #
       # Returns the values recieved on TDO during the transmission.
       #
-      def self.transmit_data(handle, tms_value, tdi, bit_count)
-        specialized_transmit(:PutTdiBits, handle, tms_value, tdi, bit_count)
+      def self.transmit_data(handle, tms_value, tdi, bit_count, overlap=false)
+        specialized_transmit(:PutTdiBits, handle, tms_value, tdi, bit_count, overlap)
       end
 
       #
@@ -177,19 +202,27 @@ module Adept
       # tdi_value: The static, /boolean/ value (true or false) to be held on TDI while the TD0 values are receieved.
       # bit_count: The total number of bits to be received.
       #
-      def self.receive(handle, tms_value, tdi_value, bit_count)
+      def self.transmit_constants(handle, tms_value, tdi_value, bit_count, overlap=false)
 
         #Determine the number of bytes to be transmitted...
         receive_bytes = (bit_count / 8.0).ceil
 
         #Transmit the given tms values...
         received = transmit_with(nil, receive_bytes) do |send_buffer, receive_buffer|
-          GetTdoBits(handle, tms_value, tdi_value, receive_buffer, bit_count, false)
+          GetTdoBits(handle, tms_value, tdi_value, receive_buffer, bit_count, overlap)
         end
 
         #... and return the values recieved on TDO.
         return received
 
+      end
+
+      #
+      # When using JTAG, receiving is the same as transmitting a
+      # long string of constant values. 
+      #
+      class << self
+        alias_method :receive, :transmit_constants
       end
 
 
@@ -209,7 +242,7 @@ module Adept
       #
       # bit_count: The total amount of bits to send.
       #
-      def self.transmit_interleave(handle, interleave, bit_count)
+      def self.transmit_interleave(handle, interleave, bit_count, overlap = false)
 
         #Transmit the given interleave using out transmisison helper function.
         #
@@ -217,7 +250,7 @@ module Adept
         #interleave, as half of them are transmitted on TMS, and the other half on TDI.
         #
         receive_data = transmit_with(interleave, interleave.size / 2) do |send_buffer, receive_buffer|
-          PutTmsTdiBits(handle, send_buffer, receive_buffer, bit_count, false)
+          PutTmsTdiBits(handle, send_buffer, receive_buffer, bit_count, overlap)
         end
 
         #Return the recieved data.
@@ -226,6 +259,23 @@ module Adept
       end
 
       private
+
+      #
+      # Helper function which creates a buffer for a frequency out-argument.
+      # Used for calling the get/set speed low-level functions.
+      #
+      def self.get_speed_out_argument
+
+        #Reserve space in memory for the actual speed returned.
+        speed_pointer = FFI::MemoryPointer.new(:ulong)
+
+        #Attempt to set the JTAG connection's speed...
+        yield speed_pointer
+
+        #... and return the actual speed set.
+        speed_pointer.get_ulong(0)
+
+      end
 
       #
       # Helper function which calls the specialized Adept transmit functions.
@@ -238,11 +288,13 @@ module Adept
       # Returns the values recieved on TDO during the transmission.
       #
 
-      def self.specialized_transmit(base_function_name, handle, static_value, dynamic_value, bit_count)
+      def self.specialized_transmit(base_function_name, handle, static_value, dynamic_value, bit_count, overlap=false)
+
+        byte_count = (bit_count / 8.0).ceil
 
         #Transmit the given values.
-        received = transmit_with(dynamic_value) do |send_buffer, receive_buffer|
-          send(base_function_name, handle, static_value, send_buffer, receive_buffer, bit_count, false)
+        received = transmit_with(dynamic_value, byte_count) do |send_buffer, receive_buffer|
+          send(base_function_name, handle, static_value, send_buffer, receive_buffer, bit_count, overlap)
         end
 
         #... and return the values recieved on TDO.
@@ -257,7 +309,7 @@ module Adept
       #
       # Accepts two arguments:
       #   transmit_data: The data to be transmitted; will be converted to a C byte array; or nil, if the send_buffer won't be used.
-      #   receive_size: The amount of data to be received. If not provided, the size of transmit_data will be used.
+      #   receive_size: The amount of data to be received, in bytes. If not provided, the size of transmit_data will be used.
       #
       # Requires a block, which should accept two pointers:
       #   transmit_buffer: A FFI pointer to a block of memory which contains the transmit data.

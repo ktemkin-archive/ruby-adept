@@ -1,4 +1,5 @@
 
+require 'adept'
 require 'adept/lowlevel'
 require 'adept/jtag'
 
@@ -95,7 +96,7 @@ module Adept
         tms_values = [path.to_i(2)]
 
         #... and apply them.
-        LowLevel::JTAG::transmit(@device.handle, tms_values, false, path.length)
+        LowLevel::JTAG::transmit(@device.handle, tms_values, false, path.length, false)
 
         #Update the internal record of the TAP state.
         @tap_state = new_state
@@ -129,10 +130,10 @@ module Adept
 
         #Move to the Exit1IR state after transmission, allowing the recieved data to be processed,
         #unless the do_not_finish value is set.
-        state_after = do_not_finish ? nil : Exit1IR
+        state_after = do_not_finish ? nil : TAPStates::Exit1IR
 
         #Transmit the actual instruction.
-        transmit_in_state(ShiftIR, bytes, bit_count, state_after, true, prefix_with_ones, padding_after)
+        transmit_in_state(TAPStates::ShiftIR, bytes, bit_count, state_after, true, prefix_with_ones, padding_after)
 
       end
 
@@ -163,10 +164,10 @@ module Adept
 
         #Move to the Exit1IR state after transmission, allowing the recieved data to be processed,
         #unless the do_not_finish value is set.
-        state_after = do_not_finish ? nil : Exit1DR
+        state_after = do_not_finish ? nil : TAPStates::Exit1DR
 
         #Transmit the actual instruction.
-        transmit_in_state(ShiftDR, bytes, bit_count, state_after, false, prefix_with_zeroes, padding_after)
+        transmit_in_state(TAPStates::ShiftDR, bytes, bit_count, state_after, false, prefix_with_zeroes, padding_after)
 
       end
 
@@ -177,13 +178,13 @@ module Adept
       # bit_count: The amount of bits to receive.
       # do_not_finish: If set, the transmission will be "left open" so additional data can be received.
       #
-      def receive_data(bit_count, do_not_finish=false)
+      def receive_data(bit_count, do_not_finish=false, overlap=false)
 
         #Put the device into the desired state.
         self.tap_state = JTAG::TAPStates::ShiftDR
 
         #Transmit the data, and recieve the accompanying response.
-        response = LowLevel::JTAG::receive(@device.handle, false, false, bit_count)
+        response = LowLevel::JTAG::receive(@device.handle, false, false, bit_count, overlap)
 
         #If a state_after was provided, place the device into that state.
         unless do_not_finish
@@ -204,7 +205,7 @@ module Adept
         self.tap_state = JTAG::TAPStates::Idle
 
         #And "tick" the test clock for the desired amount of cycles.
-        LowLevel::JTAG::tick(@device.handle, false, false, clock_ticks)
+        LowLevel::JTAG::tick(@device.handle, false, false, clock_ticks, false)
 
       end
 
@@ -258,10 +259,12 @@ module Adept
         LowLevel::JTAG::transmit(@device.handle, false, pad_with, pad_before) unless pad_before.zero?
 
         #Transmit the data, and recieve the accompanying response.
-        response = LowLevel::JTAG::transmit(@device.handle, false, value, bit_count)
+        #response = LowLevel::JTAG::transmit(@device.handle, false, value, bit_count)
+        response = transmit_and_advance(false, value, bit_count, state_after && pad_after.zero?)
 
-        #If we've been instructed to pad before the transmission, do so.
-        LowLevel::JTAG::transmit(@device.handle, false, pad_with, pad_after) unless pad_after.zero?
+        #If we've been instructed to pad after the transmission, do so.
+        #LowLevel::JTAG::transmit(@device.handle, false, pad_with, pad_after) unless pad_after.zero?
+        transmit_and_advance(false, pad_with, pad_after, state_after) unless pad_after.zero?
 
         #If a state_after was provided, place the device into that state.
         unless state_after.nil?
@@ -270,6 +273,91 @@ module Adept
 
         #Return the received response.
         response
+
+      end
+
+      #
+      # Performs a data transmission, and advances TMS.
+      #
+      # The final TMS value is overlapped with the last bit, so the final shift and
+      # state change occur on the same clock edge.
+      #
+      # tms: The TMS value to use for all but the last bit of the transmission.
+      # tdi: The TDI values to transmit, in the same format accepted by the other transmit functions.
+      # bit_count: The total amount of bits to transmit.
+      # advance_towards:
+      #   The state to advance towards after the transmission is complete. Used to
+      #   determine the last value of TMS. If advance_towards is nil, the TAP state
+      #   will not be advanced- this is useful for conditionally advancing the state.
+      #
+      def transmit_and_advance(tms, tdi, bit_count, advance_towards)
+
+        #If we were passed a byte array, pack it into a string
+        tdi = tdi.pack("C*") if tdi.respond_to?(:pack)
+
+        #Transmit all but the last bit of the TDI data.
+        main_response = LowLevel::JTAG::transmit(@device.handle, tms, tdi, bit_count - 1, false) unless bit_count == 1
+
+        #If a state to advance towards was provided, use it to figure out the next value of TMS.
+        #Otherwise, use the same TMS value as we were passed initially.
+        last_tms = advance_towards.nil?() ? tms : (@tap_state.next_hop_towards(advance_towards) == "1")
+
+        #Get the last TDI value to be transmitted.
+        last_tdi = bit_of_message(tdi, bit_count - 1)
+
+        #Transmit the last bit of the TDI data, with the final TMS value. 
+        last_response = LowLevel::JTAG::transmit(@device.handle, last_tms, last_tdi, 1, false)
+
+        #Determine what the next state should be based on the last TMS value.
+        @tap_state = @tap_state.next_state(last_tms ? 1 : 0)
+
+        #Compose a single byte-string response by merging the response from the 
+        #first and second transmissions.
+        if bit_count == 1 
+          return last_response
+        else
+          return add_bit_to_message(main_response, bit_count - 1, last_response)
+        end
+
+      end
+
+      #
+      # Returns the appropriate bit of a given message.
+      #
+      def bit_of_message(string, bit_number) 
+
+        #If were passed a non-unpackable element, return it directly.
+        return string unless string.respond_to?(:unpack)
+
+        #Break the message down into an array of bytes
+        bytes = string.unpack("B*").first
+
+        #... and return the requested bit, as a boolean.
+        bytes[-bit_number - 1] == "1"
+
+      end
+
+      #
+      # Appends a given bit to a message.
+      # 
+      # message: The message to which the bit is to be appended, as a byte-string.
+      # message_length: The message's length, in bits.
+      # bit: The bit to be appended, as a boolean.
+      #
+      def add_bit_to_message(message, message_length, bit)
+
+        #If we have something other than an integer, consider its truthiness
+        #in the same way that C would.
+        bit = bit.unpack("C*").first.nonzero? if bit.respond_to?(:unpack)
+
+        #Convert the message into a sequence of binary bits.
+        message = message.unpack("B*").first
+
+        #Extract all of the bits up to the bit count, and add the new bit.
+        message = (bit ? '1' : '0') + message[-message_length..-1]
+
+        #Convert the message back into a packed string, and return it.
+        [message].pack("B*")
 
       end
 
