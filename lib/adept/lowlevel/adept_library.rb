@@ -65,6 +65,7 @@ module Adept
             raise error
 
           end
+
         end
       end
 

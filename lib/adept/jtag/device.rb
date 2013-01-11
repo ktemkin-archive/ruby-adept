@@ -131,7 +131,7 @@ module Adept
       # 
       #
       def receive_data(bit_count)
-        @connection.transmit_data(false, bit_count, true, @position_in_chain)
+        @connection.transmit_data(false, bit_count, true, @position_in_chain, true)
       end
 
       #

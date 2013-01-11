@@ -187,9 +187,7 @@ module Adept
         response = LowLevel::JTAG::receive(@device.handle, false, false, bit_count, overlap)
 
         #If a state_after was provided, place the device into that state.
-        unless do_not_finish
-          self.tap_state = JTAG::TAPStates::Exit1DR
-        end
+        self.tap_state = JTAG::TAPStates::Exit1DR unless do_not_finish
 
         #Return the received response.
         response
@@ -258,18 +256,14 @@ module Adept
         #If we've been instructed to pad before the transmission, do so.
         LowLevel::JTAG::transmit(@device.handle, false, pad_with, pad_before) unless pad_before.zero?
 
-        #Transmit the data, and recieve the accompanying response.
-        #response = LowLevel::JTAG::transmit(@device.handle, false, value, bit_count)
-        response = transmit_and_advance(false, value, bit_count, state_after && pad_after.zero?)
+        #Transmit the data, and receive the accompanying response.
+        response = transmit_and_advance(false, value, bit_count, pad_after.zero?() ? state_after : nil)
 
         #If we've been instructed to pad after the transmission, do so.
-        #LowLevel::JTAG::transmit(@device.handle, false, pad_with, pad_after) unless pad_after.zero?
         transmit_and_advance(false, pad_with, pad_after, state_after) unless pad_after.zero?
 
         #If a state_after was provided, place the device into that state.
-        unless state_after.nil?
-          self.tap_state = state_after
-        end
+        self.tap_state = state_after unless state_after.nil?
 
         #Return the received response.
         response
@@ -292,20 +286,23 @@ module Adept
       #
       def transmit_and_advance(tms, tdi, bit_count, advance_towards)
 
+        #If we don't have a state to advance towards, perform a normal transmit, and return.
+        unless advance_towards
+          return LowLevel::JTAG::transmit(@device.handle, tms, tdi, bit_count, false)
+        end
+
         #If we were passed a byte array, pack it into a string
         tdi = tdi.pack("C*") if tdi.respond_to?(:pack)
 
         #Transmit all but the last bit of the TDI data.
         main_response = LowLevel::JTAG::transmit(@device.handle, tms, tdi, bit_count - 1, false) unless bit_count == 1
 
-        #If a state to advance towards was provided, use it to figure out the next value of TMS.
-        #Otherwise, use the same TMS value as we were passed initially.
-        last_tms = advance_towards.nil?() ? tms : (@tap_state.next_hop_towards(advance_towards) == "1")
-
-        #Get the last TDI value to be transmitted.
-        last_tdi = bit_of_message(tdi, bit_count - 1)
+        #Figure out what TMS should be during the last transmission by checking the path
+        #to the state we want to advance towards.
+        last_tms = @tap_state.next_hop_towards(advance_towards) == 1 
 
         #Transmit the last bit of the TDI data, with the final TMS value. 
+        last_tdi = bit_of_message(tdi, bit_count - 1)
         last_response = LowLevel::JTAG::transmit(@device.handle, last_tms, last_tdi, 1, false)
 
         #Determine what the next state should be based on the last TMS value.
@@ -354,7 +351,7 @@ module Adept
         message = message.unpack("B*").first
 
         #Extract all of the bits up to the bit count, and add the new bit.
-        message = (bit ? '1' : '0') + message[-message_length..-1]
+        message = (bit ? '1' : '0') + message[-message_length, message_length]
 
         #Convert the message back into a packed string, and return it.
         [message].pack("B*")
