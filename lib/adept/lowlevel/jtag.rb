@@ -129,6 +129,8 @@ module Adept
       #
       def self.transmit(handle, tms, tdi, bit_count, overlap=false)
 
+        return if bit_count.zero?
+
         #If TMS and TDI were both provided as byte arrays, send them both.
         if tms.respond_to?(:size) and tdi.respond_to?(:size)
 
@@ -203,6 +205,8 @@ module Adept
       # bit_count: The total number of bits to be received.
       #
       def self.transmit_constants(handle, tms_value, tdi_value, bit_count, overlap=false)
+
+        return if bit_count.zero?
 
         #Determine the number of bytes to be transmitted...
         receive_bytes = (bit_count / 8.0).ceil

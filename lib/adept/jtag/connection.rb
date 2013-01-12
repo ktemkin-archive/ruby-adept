@@ -295,26 +295,22 @@ module Adept
         tdi = tdi.pack("C*") if tdi.respond_to?(:pack)
 
         #Transmit all but the last bit of the TDI data.
-        main_response = LowLevel::JTAG::transmit(@device.handle, tms, tdi, bit_count - 1, false) unless bit_count == 1
+        main_response = LowLevel::JTAG::transmit(@device.handle, tms, tdi, bit_count - 1, false) 
 
         #Figure out what TMS should be during the last transmission by checking the path
         #to the state we want to advance towards.
-        last_tms = @tap_state.next_hop_towards(advance_towards) == 1 
+        last_tms, next_state = @tap_state.next_hop_towards(advance_towards)
 
         #Transmit the last bit of the TDI data, with the final TMS value. 
         last_tdi = bit_of_message(tdi, bit_count - 1)
-        last_response = LowLevel::JTAG::transmit(@device.handle, last_tms, last_tdi, 1, false)
+        last_response = LowLevel::JTAG::transmit(@device.handle, last_tms == 1, last_tdi, 1, false)
 
-        #Determine what the next state should be based on the last TMS value.
-        @tap_state = @tap_state.next_state(last_tms ? 1 : 0)
+        #Update the internal TAP fsm.
+        @tap_state = next_state
 
         #Compose a single byte-string response by merging the response from the 
         #first and second transmissions.
-        if bit_count == 1 
-          return last_response
-        else
-          return add_bit_to_message(main_response, bit_count - 1, last_response)
-        end
+        return add_bit_to_message(main_response, bit_count - 1, last_response)
 
       end
 
@@ -343,6 +339,9 @@ module Adept
       #
       def add_bit_to_message(message, message_length, bit)
 
+        #If we don't have a message, return the bit as a string.
+        return bit ? "\x01" : "\x00" if message_length.zero?
+
         #If we have something other than an integer, consider its truthiness
         #in the same way that C would.
         bit = bit.unpack("C*").first.nonzero? if bit.respond_to?(:unpack)
@@ -350,8 +349,11 @@ module Adept
         #Convert the message into a sequence of binary bits.
         message = message.unpack("B*").first
 
+        #Ensure that the message is zero-padded to be at least the message length.
+        message = message.rjust(message_length, '0')
+
         #Extract all of the bits up to the bit count, and add the new bit.
-        message = (bit ? '1' : '0') + message[-message_length, message_length]
+        message = (bit ? '1' : '0') + message[-message_length..-1]
 
         #Convert the message back into a packed string, and return it.
         [message].pack("B*")
@@ -379,7 +381,7 @@ module Adept
         until state == destination
 
           #Find the next hop on the path to the destination...
-          next_hop = state.next_hop_towards(destination)
+          next_hop, _ = state.next_hop_towards(destination)
 
           #Move the "state pointer" to the next state, simulating a traversal
           #of the Finite State Machine.

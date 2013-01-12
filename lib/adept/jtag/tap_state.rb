@@ -38,7 +38,7 @@ module Adept
           #or a hop of one would cause a loop, then the next hop should be zero.
           #
           #Otherwise, the next hop should be '1'.
-          ((state == towards_zero) || towards_one_would_cause_loop) ? 0 : 1
+          ((state == towards_zero) || towards_one_would_cause_loop) ? [0, towards_zero] : [1, towards_one]
         end
 
       end
