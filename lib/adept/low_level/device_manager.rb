@@ -1,6 +1,6 @@
 require 'ffi'
-require 'adept/lowlevel/device'
-require 'adept/lowlevel/adept_library'
+require 'adept/low_level/device'
+require 'adept/low_level/adept_library'
 
 module Adept
   module LowLevel

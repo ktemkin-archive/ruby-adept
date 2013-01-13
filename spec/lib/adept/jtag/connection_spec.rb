@@ -415,7 +415,7 @@ describe JTAG::Connection do
 
       #...  the types...
       types = devices.collect { |d| d.class }
-      types.should == [JTAG::FPGA, JTAG::PlatformFlash]
+      types.should == [JTAG::Devices::FPGA, JTAG::Devices::PlatformFlash]
 
       #... the positions in the chain...
       positions = devices.collect { |d| d.instance_variable_get(:@position_in_chain) }

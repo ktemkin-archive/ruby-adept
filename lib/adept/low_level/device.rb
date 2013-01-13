@@ -1,5 +1,5 @@
 require 'ffi'
-require 'adept/lowlevel/device_manager'
+require 'adept/low_level/device_manager'
 
 module Adept
   module LowLevel

@@ -1,6 +1,6 @@
 require 'ffi'
-require 'adept/lowlevel'
-require 'adept/lowlevel/error_handler'
+require 'adept/low_level'
+require 'adept/low_level/error_handler'
 
 module Adept
   module LowLevel

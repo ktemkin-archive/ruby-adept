@@ -1,6 +1,6 @@
 
 require 'adept'
-require 'adept/lowlevel'
+require 'adept/low_level'
 require 'adept/jtag'
 
 module Adept

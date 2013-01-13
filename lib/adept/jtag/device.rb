@@ -143,7 +143,6 @@ module Adept
         @connection.run_test(cycles)
       end
 
-
       private
 
       #

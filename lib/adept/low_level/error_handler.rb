@@ -1,5 +1,5 @@
 require 'ffi'
-require 'adept/lowlevel/device_error'
+require 'adept/low_level/device_error'
 
 module Adept
   module LowLevel

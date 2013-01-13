@@ -1,5 +1,5 @@
 require 'ffi'
-require 'adept/lowlevel/adept_library'
+require 'adept/low_level/adept_library'
 
 module Adept
   module LowLevel
@@ -110,7 +110,6 @@ module Adept
       def self.set_speed(handle, speed)
         get_speed_out_argument { |speed_out| SetSpeed(handle, speed, speed_out) }
       end
-
 
  
       #

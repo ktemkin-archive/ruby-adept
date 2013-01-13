@@ -1,5 +1,5 @@
 
-require 'adept/lowlevel'
+require 'adept/low_level'
 
 require 'adept/connection_provider'
 require 'adept/jtag'

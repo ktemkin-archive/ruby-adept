@@ -7,9 +7,9 @@ include Adept
 # Tests for the JTAGDevice base module.
 #
 #
-describe JTAG::FPGA do
+describe JTAG::Devices::FPGA do
 
-  let(:device)  { JTAG::FPGA.new("\xA2\xC2\xA0\x93", mock(JTAG::Connection), 2, 8)}
+  let(:device)  { JTAG::Devices::FPGA.new("\xA2\xC2\xA0\x93", mock(JTAG::Connection), 2, 8)}
 
   describe "#verify_idcode" do
 

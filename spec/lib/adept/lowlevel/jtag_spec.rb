@@ -3,7 +3,7 @@
 #
 
 require 'adept'
-require 'adept/lowlevel'
+require 'adept/low_level'
 
 #Pull the relevant modules into the main namespace, for convenience.
 include Adept
