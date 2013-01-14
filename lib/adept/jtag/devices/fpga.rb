@@ -87,19 +87,18 @@ module Adept
           finalize_configuration
 
           #And verify that the programming succeeded. 
-          raise ProgrammingError, "Programming failed; expected a program with a usercode of #{bitstream.usercode}, recieved #{usercode}." unless usercode == bitstream.usercode
+          unless bitstream.usercode == usercode || bitstrea.usercode.nil?
+            raise ProgrammingError, "Programming failed; expected a usercode of #{bitstream.usercode}, recieved #{usercode}." 
+          end
 
         end
 
         private
 
         #
-        # Sets up configuration of the FPGA.
+        # Performs the initial steps which ready the FPGA for configuration.
         #
         def initialize_configuration
-
-          #FIXME debug only, remove
-          @connection.reset_target
 
           #Pulse the Program pin via JTAG.
           self.instruction = :jprogram
@@ -108,18 +107,15 @@ module Adept
           self.instruction = :cfg_in
           run_test(ConfigurationStartup)
 
-          #Send 88 zeroes (this may be removable).
-          self.instruction = :cfg_in
-          transmit_data(false, 88)
-          self.instruction = :cfg_in
-
         end
 
+        #
+        # Performs the final steps which start up a configured program.
+        #
         def finalize_configuration
 
           #Put the FPGA into startup mode...
           self.instruction = :jstart
-          transmit_data(false, 16)
 
           #And then allow the FPGA to run normally.
           run_test(FPGAStartup)

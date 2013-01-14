@@ -63,7 +63,7 @@ describe JTAG::Devices::FPGA do
       end
 
       it "should be able to detect the usercode of a design" do
-        @real_device.usercode.should == "\xFF\xFF\xFF\xFF"
+        @real_device.usercode.should == "FFFFFFFF"
       end
 
     end

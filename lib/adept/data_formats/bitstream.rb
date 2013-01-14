@@ -47,7 +47,7 @@ module Adept
       #Raw binary configuration information
       uint8  :e,                :check_value => 'e'.ord
       uint32 :bitstream_length
-      array  :bitstream,        :type => :uint8, :initial_length => :bitstream_length
+      array  :raw_bitstream,        :type => :uint8, :initial_length => :bitstream_length
 
       UsercodeFormat= /UserID=0x([0-9A-Fa-f]+)/
       
@@ -90,7 +90,7 @@ module Adept
       # Returns the bitstream as an arran array.
       #
       def to_a
-        bitstream.to_a.map { |b| self.class.reverse_byte(b) }
+        raw_bitstream.to_a.map { |b| self.class.reverse_byte(b) }
       end
 
       #
