@@ -120,7 +120,7 @@ module Adept
       # Send data directly to (and receive data directly from) the given device.
       # Assumes the current device is active, and all other devices are in bypass.
       #
-      def transmit_data(data, bit_count)
+      def transmit_data(data, bit_count=data.length * 8)
         @connection.transmit_data(data, bit_count, true, @position_in_chain)
       end
 

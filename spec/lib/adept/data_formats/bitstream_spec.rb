@@ -23,14 +23,6 @@ describe Adept::DataFormats::Bitstream do
       subject.info.should == "design_name.ncd;UserID=0x0123ABCD"
     end
 
-    it "should extract the filename from the design information" do
-      subject.filename.should == "design_name.ncd"
-    end
-
-    it "should extract the usercode from the design information" do
-      subject.usercode.should == "0123ABCD"
-    end
-
     it "should read the part number from the third field in the file" do
       subject.part.should == "3s250ecp132"
     end
@@ -43,12 +35,38 @@ describe Adept::DataFormats::Bitstream do
       subject.raw_time.should == "22:41:50"
     end
 
-    it "should extract the time and date that the bitstream was created as a ruby DateTime" do
-      subject.time_created.should == DateTime.new(2012, 12, 29, 22, 41, 50)
-    end
-
     it "should read the bitsream itself from the remainder of the file" do
       subject.bitstream.should == "0123456789ABCDEF".unpack("C*")
+    end
+
+    describe "#filename" do
+      it "should extract the filename from the design information" do
+        subject.filename.should == "design_name.ncd"
+      end
+    end
+
+    describe "#usercode" do 
+      it "should extract the usercode from the design information" do
+        subject.usercode.should == "0123ABCD"
+      end
+    end
+
+    describe "#time_created" do
+      it "should extract the time and date that the bitstream was created as a ruby DateTime" do
+        subject.time_created.should == DateTime.new(2012, 12, 29, 22, 41, 50)
+      end
+    end
+
+    describe "#to_a" do
+      it "should create a valid array equal to the bitstream's contents" do
+        subject.to_a.should == "0123456789ABCDEF".unpack("C*")
+      end
+    end
+
+    describe "#to_s" do
+      it "should return the binary data from the bitstream with the header removed" do
+        subject.to_s.should == "0123456789ABCDEF"
+      end
     end
 
   end
@@ -57,6 +75,15 @@ describe Adept::DataFormats::Bitstream do
     
     it "should raise an exception" do
       expect { Adept::DataFormats::Bitstream.from_string(InvalidBitstream) }.to raise_error(BinData::ValidityError)
+    end
+
+  end
+
+  describe "#reverse_byte" do
+    subject { Adept::DataFormats::Bitstream }
+
+    it "should correct reverse the bits in a single byte" do
+      subject.send(:reverse_byte, 0xF0).should == 0x0F
     end
 
   end

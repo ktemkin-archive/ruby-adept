@@ -42,6 +42,7 @@ module Adept
         }
 
         ConfigurationStartup = 14_000
+        FPGAStartup = 100
 
         #
         # Verifies the device's IDcode using the explicit IDCode instruction.
@@ -68,7 +69,10 @@ module Adept
           self.instruction = :usercode
 
           #And attempt to retrieve the 32-bit IDcode.
-          receive_data(32).reverse
+          usercode_packed = receive_data(32).reverse
+
+          #Return the usercode as a hex string.
+          usercode_packed.unpack("H*").first.upcase
 
         end
 
@@ -77,13 +81,25 @@ module Adept
         #
         def configure(bitstream)
 
+          #Send the bitstream to the FPGA.
           initialize_configuration
+          transmit_data(bitstream.to_s)
+          finalize_configuration
+
+          #And verify that the programming succeeded. 
+          raise ProgrammingError, "Programming failed; expected a program with a usercode of #{bitstream.usercode}, recieved #{usercode}." unless usercode == bitstream.usercode
 
         end
 
         private
 
+        #
+        # Sets up configuration of the FPGA.
+        #
         def initialize_configuration
+
+          #FIXME debug only, remove
+          @connection.reset_target
 
           #Pulse the Program pin via JTAG.
           self.instruction = :jprogram
@@ -91,6 +107,22 @@ module Adept
           #Put the device into configuration mode, and give it 14,000 cycles to start up.
           self.instruction = :cfg_in
           run_test(ConfigurationStartup)
+
+          #Send 88 zeroes (this may be removable).
+          self.instruction = :cfg_in
+          transmit_data(false, 88)
+          self.instruction = :cfg_in
+
+        end
+
+        def finalize_configuration
+
+          #Put the FPGA into startup mode...
+          self.instruction = :jstart
+          transmit_data(false, 16)
+
+          #And then allow the FPGA to run normally.
+          run_test(FPGAStartup)
 
         end
 

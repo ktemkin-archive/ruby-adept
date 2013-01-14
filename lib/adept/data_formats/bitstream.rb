@@ -79,6 +79,37 @@ module Adept
         DateTime.parse("#{raw_date} #{raw_time}")
       end
 
+      #
+      # Returns the length of the bitsream, in bits.
+      #
+      def bit_length
+        bitstream_length * 8
+      end
+
+      #
+      # Returns the bitstream as an arran array.
+      #
+      def to_a
+        bitstream.to_a.map { |b| self.class.reverse_byte(b) }
+      end
+
+      #
+      # Returns the bitstream as a bit string.
+      #
+      def to_s
+        to_a.pack("C*")
+      end
+
+      private 
+
+      #
+      # Reverses the bit order of a given byte, using a fast algorithm from the
+      # following page: http://graphics.stanford.edu/~seander/bithacks.html
+      #
+      def self.reverse_byte(byte)
+         (((byte * 0x0802 & 0x22110) | (byte * 0x8020 & 0x88440)) * 0x10101 >> 16) % 0x100;
+      end
+
     end
 
   end
