@@ -1,35 +1,26 @@
---------------------------------------------------------------------------------
--- Company: 
--- Engineer:
+----------------------------------------------------------------------------------
+-- Simple Synchronous FIFO
 --
--- Create Date:   14:05:20 01/15/2013
--- Design Name:   
--- Module Name:   /home/ktemkin/Documents/Projects/ruby-adept/firmware/epp_stream/tests/fifo_testbench.vhdl
--- Project Name:  epp_stream
--- Target Device:  
--- Tool versions:  
--- Description:   
--- 
--- VHDL Test Bench Created by ISE for module: fifo
--- 
--- Dependencies:
--- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
+-- Author: Kyle J. Temkin, <ktemkin@binghamton.edu>
+-- Copyright (c) Kyle J. Temkin,  2013 Binghamton University
 --
--- Notes: 
--- This testbench has been automatically generated using types std_logic and
--- std_logic_vector for the ports of the unit under test.  Xilinx recommends
--- that these types always be used for the top-level I/O of a design in order
--- to guarantee that the testbench will bind correctly to the post-implementation 
--- simulation model.
---------------------------------------------------------------------------------
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+--
+-- You should have received a copy of the GNU General Public License
+-- along with this program.  If not, see <http://www.gnu.org/licenses/>.-
+--
+----------------------------------------------------------------------------------
+
 library ieee;
 use ieee.std_logic_1164.all;
- 
--- uncomment the following library declaration if using
--- arithmetic functions with signed or unsigned values
 use ieee.numeric_std.all;
  
 entity fifo_testbench is
@@ -56,6 +47,15 @@ architecture behavior of fifo_testbench is
        full : out  std_logic
   );
   end component;
+
+  --
+  -- Convenience function which waits until juster the rising edge.
+  -- 
+  procedure wait_until_after_rising_edge(signal clk : in std_logic) is
+  begin
+    wait until rising_edge(clk);
+    wait for 1 ps;
+  end procedure wait_until_after_rising_edge;
 
   --inputs
   signal clk : std_logic := '0';
@@ -113,6 +113,7 @@ begin
    
     --Add 31 elements to the FIFO.
     enqueue <= '1';
+    dequeue <= '0';
     for i in 1 to 31 loop
 
       --Ensure that we're counting the values properly. 
@@ -122,8 +123,7 @@ begin
       data_in <= std_logic_vector(to_unsigned(i, 8));
 
       --Wait until just after the next rising-edge of the clock.
-      wait until rising_edge(clk);
-      wait for 1 ps;
+      wait_until_after_rising_edge(clk);
     
       --Check to see that our enqueue is behaving properly.
       assert empty = '0' report "Empty should not be one while there are elements in the FIFO.";
@@ -134,6 +134,28 @@ begin
     --Check to see that the FIFO is full.
     assert full = '1' report "After adding 31 elements to the FIFO, it should be full.";
 
+    --Verify that we can perform simultaneous read/writes, even when the FIFO is full.
+    enqueue <= '1';
+    dequeue <= '1';
+    data_in <= x"20";
+    wait_until_after_rising_edge(clk);
+
+    --Check to ensure that the simultaneous enqueue/dequeue does not affect the count.
+    assert data_out = x"02" report "After a dequeue, the next value in the FIFO should be exposed.";
+    assert count = "11111" report "A simultaneous enqueue/dequeue should not affect the count.";
+
+    --Remove each of the elements from the FIFO.
+    enqueue <= '0';
+    dequeue <= '1';
+    for i in 2 to 32 loop 
+      assert data_out = std_logic_vector(to_unsigned(i, 8)) report "Elements should be dequeued in the same ordered they were entered.";
+      assert count = std_logic_vector(to_unsigned(33 - i, 5)) report "Count should decrease as elements are dequeued.";
+      wait_until_after_rising_edge(clk);
+    end loop;
+
+    --Check to ensure that the FIFO is empty after all elements have been dequeued.
+    assert count = "00000" report "After all elements are dequeued, the count should be zero.";
+    assert empty = '1' report "After all elements are dequeued, the queue should be empty.";
 
   report "Test complete.";
   wait;
