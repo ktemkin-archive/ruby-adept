@@ -1,0 +1,21 @@
+#Basys Board on-board clock.
+NET "clk"             LOC = "B8"; # Bank = 0, Signal name = MCLK
+
+#Reset button.
+NET "reset"           LOC = "G12"; #PB12
+
+#EPP Control Signals
+NET "eppAddrStrobe"   LOC = "F2"; # Bank = 3
+NET "eppDataStrobe"   LOC = "F1"; # Bank = 3
+NET "eppReadNotWrite" LOC = "C2"; # Bank = 3
+NET "eppAck"          LOC = "D2"; # Bank = 3
+
+#EPP Data Signals
+NET "eppDataBus<0>"   LOC = "N2"; # Bank = 2
+NET "eppDataBus<1>"   LOC = "M2"; # Bank = 2
+NET "eppDataBus<2>"   LOC = "M1"; # Bank = 3
+NET "eppDataBus<3>"   LOC = "L1"; # Bank = 3
+NET "eppDataBus<4>"   LOC = "L2"; # Bank = 3
+NET "eppDataBus<5>"   LOC = "H2"; # Bank = 3
+NET "eppDataBus<6>"   LOC = "H1"; # Bank = 3
+NET "eppDataBus<7>"   LOC = "H3"; # Bank = 3

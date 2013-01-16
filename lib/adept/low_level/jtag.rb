@@ -1,5 +1,6 @@
 require 'ffi'
-require 'adept/low_level/adept_library'
+require 'adept/low_level/library'
+require 'adept/low_level/connection'
 
 module Adept
   module LowLevel
@@ -9,17 +10,17 @@ module Adept
     # Wrapper for the low-level JTAG manipulation functions.
     #
     module JTAG
-      extend AdeptLibrary
+      extend LowLevel::Library
 
       #Wrap the JTAG library, libDJTG
       wrap_adept_library 'djtg'
 
+      #And mix-in the low-level connection module.
+      extend LowLevel::Connection
+
       #
       # JTAG Support Query Functions
       #
-
-      #Determines the number of JTAG ports that the given device provides.
-      attach_adept_function :GetPortCount, [:ulong, :pointer]
 
       #Determines which interfaces the given JTAG port provides.
       attach_adept_function :GetPortProperties, [:ulong, :int32, :pointer]
@@ -28,30 +29,6 @@ module Adept
       SUPPORTS_SET_SPEED = 0
       SUPPORTS_SET_PIN_STATE = 1
 
-
-      #
-      # Returns the number of JTAG ports the given device offers.
-      #
-      def self.port_count(device)
-
-        #Create a pointer to a new Int32 in memory...
-        count_pointer = FFI::MemoryPointer.new(:int32)
-
-        #... and fill it with the number of available JTAG ports.
-        GetPortCount(device, count_pointer)
-
-        #Return the acquired count as a ruby integer.
-        count_pointer.get_int32(0)
-
-      end
-
-      #
-      # Returns a true-like value if the given device supports JTAG,
-      # or nil if it does not.
-      #
-      def self.supported?(device)
-        port_count(device).nonzero?
-      end
 
       #
       # Returns a hash which indicates the calls that the given port supports.
@@ -77,16 +54,6 @@ module Adept
         }
 
       end
-
-      #
-      # JTAG Enable/Disable calls.
-      #
-
-      #Enable the JTAG port with the given number. Only one JTAG device can be active at a time!
-      attach_adept_function :EnableEx, [:ulong, :int32]
-
-      #Disable the currently active JTAG port.
-      attach_adept_function :Disable, [:ulong]
 
       #
       # JTAG speed manipulation calls

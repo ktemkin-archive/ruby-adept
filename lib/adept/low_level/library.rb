@@ -12,7 +12,7 @@ module Adept
     # "Base" module, which provides functionality for interfacing with 
     # Digilent Adept low-level libraries.
     #
-    module AdeptLibrary
+    module Library
       include FFI::Library
 
       #

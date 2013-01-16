@@ -1,18 +1,19 @@
 require 'ffi'
 require 'adept/low_level/device'
-require 'adept/low_level/adept_library'
+require 'adept/low_level/library'
 
 module Adept
   module LowLevel
 
-    TRANSPORT_MAX_LENGTH = 16
+    #Stores the maximum length of a transport string, will terminating null.
+    TransportMaxLength = 16
 
     #
     # DeviceManager (DMGR)
     # Wrapper for the low-level Adept device management functionality.
     #
     module DeviceManager
-      extend AdeptLibrary
+      extend LowLevel::Library
 
       #Wrap the device manager library, libDMGR
       wrap_adept_library 'dmgr'
@@ -87,7 +88,7 @@ module Adept
       def self.get_transport_name(transport_id)
 
         #Create a string buffer for the transport's name...
-        string_pointer = FFI::MemoryPointer.new(TRANSPORT_MAX_LENGTH) 
+        string_pointer = FFI::MemoryPointer.new(TransportMaxLength) 
 
         #... and fill it with the relevant transport's description.
         GetDtpString(transport_id, string_pointer)
