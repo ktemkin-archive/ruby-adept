@@ -89,7 +89,81 @@ module Adept
 
       end
 
-    end
 
+      private
+
+      
+      #
+      # Creates a C-style byte buffer containing the given item using FFI.
+      #
+      # The buffer exists in managed memory (and thus will be garbage
+      # collected when appropriate), but is contiguous, and thus prime
+      # for passing to a C interop.
+      #
+      def to_buffer(item)
+
+        #Try to convert the item to an array, and then to a string,
+        #if it supports it. This allows us to easily get a byte string
+        #from most Ruby types.
+        #
+        #String _should_ support neither of these methods, and thus will
+        #pass unaltered.
+        # 
+        item = item.to_a if item.respond_to?(:to_a)
+        item = item.pack("C*") if item.respond_to?(:pack)
+        
+        #Create a new buffer, and fill it with our byte string.
+        buffer = FFI::MemoryPointer.new(item.byte_size)
+        buffer.put_bytes(0, item)
+
+        #And return the filled buffer.
+        return buffer
+        
+
+      end
+
+
+      #
+      # Recieves a byte string via a C-style byte buffer.
+      #
+      # types: A list of types to be received, in the same format as accepted by
+      #   FFI::MemoryPointer. :int, 8, and :long are all acceptable types.
+      #
+      # Must be called with a block, which should fill the byte buffer. 
+      # Yields a c-style pointer to each of the created buffers, in the order
+      # they were specified as arguments.
+      #
+      def receive_out_arguments(*types)
+
+        #Create a pointer to each of the requested types.
+        pointers = types.map { |type| FFI::MemoryPointer.new(type) }
+
+        #Yield each of the pointers to the given block.
+        yield(*pointers)
+
+        #Read each of the byte-buffers given.  
+        types.zip(pointers).map do |type, pointer|
+
+          #If we've been passed a buffer type as a symbol, use the
+          #symbol name to figure out the appropriate reading method.
+          if type.kind_of?(Symbol)
+
+            #Compute the method name by adding "get_" to the device type,
+            #as the the FFI convention.
+            method_name = 'read_' + type.to_s
+
+            #And return the contents of the byte buffer.
+            next byte_buffer.send(method_name)
+  
+          #Otherwise, return the data in raw binary.        
+          else  
+            next byte_buffer.get_string(0, type)
+          end
+
+        end
+
+      end
+
+    end
   end
 end
