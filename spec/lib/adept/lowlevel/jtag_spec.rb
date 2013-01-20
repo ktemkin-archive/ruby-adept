@@ -61,7 +61,7 @@ describe LowLevel::JTAG do
   #
   # Tests which require a connectd Basys2-250K board.
   # 
-  describe "online functionality" do
+  describe "online functionality", :online => true do
 
     #Before each test, create a connection to a Basys board
     before :each do

@@ -14,7 +14,7 @@ describe Device do
 
   describe ".connected_devices" do
 
-    it "should be able to enumerate the connected devices" do
+    it "should be able to enumerate the connected devices", :online => true do
 
       devices = Adept::Device.connected_devices
 
@@ -29,7 +29,7 @@ describe Device do
 
   describe ".open" do
 
-    it "should be able to connect to a board by path" do
+    it "should be able to connect to a board by path", :online => true do
 
       #Get the path of a connected device.
       path = Adept::Device.connected_devices.first[:path]
@@ -48,7 +48,7 @@ describe Device do
 
   describe ".by_name" do
 
-    it "should be able to connect to a device by name" do
+    it "should be able to connect to a device by name", :online => true do
 
       #Try to connect to a Basys board...
       device = Adept::Device.by_name('Basys2')
@@ -63,7 +63,7 @@ describe Device do
 
   end
 
-  describe "post-connection tasks" do
+  describe "post-connection tasks", :online => true do
 
     before :each do
       @device = Adept::Device.by_name('Basys2')
