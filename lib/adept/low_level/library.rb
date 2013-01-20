@@ -106,7 +106,7 @@ module Adept
         #if it supports it. This allows us to easily get a byte string
         #from most Ruby types.
         #
-        #String _should_ support neither of these methods, and thus will
+        #Strings _shouldn't_ support either of these methods, and thus will
         #pass unaltered.
         # 
         item = item.to_a if item.respond_to?(:to_a)
@@ -119,7 +119,6 @@ module Adept
         #And return the filled buffer.
         return buffer
         
-
       end
 
 
