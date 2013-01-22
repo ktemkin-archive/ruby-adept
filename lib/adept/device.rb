@@ -29,14 +29,25 @@ module Adept
     #
     def self.by_name(name)
 
+      #Find path to the first device with the given name.
+      path = path_to(name)
+
+      #Return a new connection to the target device, or nil if no path was found.
+      path ? self.new(path) : nil
+
+    end
+
+    #
+    # Returns the path to first device with the given name, 
+    # or nil if no devices with that name could be found.
+    #
+    def self.path_to(name)
+
       #Find the first device with the given name.
       target_device = connected_devices.find { |device| device[:name] == name }
 
-      #If we didn't find a device, return nil.
-      return nil if target_device.nil?
-
-      #Return a new connection to the target device.
-      self.new(target_device[:path])
+      #Return the path to the target device.
+      target_device ? target_device[:path] : nil
 
     end
 

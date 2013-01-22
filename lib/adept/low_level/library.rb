@@ -141,7 +141,7 @@ module Adept
         yield(*pointers)
 
         #Read each of the byte-buffers given.  
-        types.zip(pointers).map do |type, pointer|
+        results = types.zip(pointers).map do |type, pointer|
 
           #If we've been passed a buffer type as a symbol, use the
           #symbol name to figure out the appropriate reading method.
@@ -152,14 +152,19 @@ module Adept
             method_name = 'read_' + type.to_s
 
             #And return the contents of the byte buffer.
-            next byte_buffer.send(method_name)
+            next pointer.send(method_name)
   
           #Otherwise, return the data in raw binary.        
           else  
-            next byte_buffer.get_string(0, type)
+            next pointer.get_string(0, type)
           end
 
         end
+
+        #If we have a single-element array, return the element directly;
+        #otherwise, return the array. This format works well with multiple 
+        #assignment.
+        (results.count == 1) ? results.first : results
 
       end
 

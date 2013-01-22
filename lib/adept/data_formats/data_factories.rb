@@ -9,6 +9,9 @@ module Adept
     #
     module DataFactories
 
+        #
+        # Creates a new instance of the target class from a file or filename.
+        #
         def from_file(file)
 
           #If we have a file object, read it into memory.
@@ -21,6 +24,7 @@ module Adept
 
           #Create a new instance of the extending class from the given file.
           from_string(file)
+
         end
 
     end

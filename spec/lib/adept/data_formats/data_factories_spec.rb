@@ -7,7 +7,7 @@ require 'adept/data_formats'
 #
 require 'rspec/mocks'
 require 'rspec/expectations'
-require 'fakefs'
+require 'fakefs/spec_helpers'
 
 include Adept
 
@@ -18,6 +18,7 @@ describe Adept::DataFormats::DataFactories do
   subject { Object.new.extend(Adept::DataFormats::DataFactories) }
 
   describe "#from_file" do
+    include FakeFS::SpecHelpers
 
     before :each do
       File::open('test', 'w') { |x| x.write('ABCDE') }

@@ -51,7 +51,7 @@ module Adept
       # Returns the value of a single EPP register.
       #
       def self.get_register_value(handle, address, overlap=false)
-        receieve_out_arguments(:uint8) { |receive_buffer| GetReg(handle, address, receive_buffer, overlap) }
+        receive_out_arguments(:uint8) { |receive_buffer| GetReg(handle, address, receive_buffer, overlap) }
       end
 
       #
@@ -143,6 +143,7 @@ module Adept
 
       end
 
+     
 
     end
 
