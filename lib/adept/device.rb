@@ -113,6 +113,14 @@ module Adept
 
     end
 
+    #
+    # Returns a new connection to the first connected device.
+    #
+    def self.open_first_connected_device
+      device = connected_devices.first
+      new(device[:path])
+    end
+
   end
 
 end

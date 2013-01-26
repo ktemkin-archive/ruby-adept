@@ -58,7 +58,10 @@ module Adept
           idcode = receive_data(32, true)
 
           #If we've recieved the special "null" IDcode, we've finished enumerating.
-          break if idcode == "\x00\x00\x00\x00"
+          #(In this case, we'll choose to accept the technically-valid all-ones IDcode as null,
+          #as it is returned by most system boards when their power is turned off, and isn't
+          #otherwise supported.)
+          break if idcode == "\x00\x00\x00\x00" or idcode == "\xFF\xFF\xFF\xFF"
 
           #Otherwise, add this idcode to the list...
           devices << JTAG::Device.from_idcode(idcode.reverse, self, devices_in_chain, chain_length)
