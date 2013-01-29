@@ -1,0 +1,110 @@
+#!/usr/bin/env ruby
+
+require 'ise'
+require 'adept'
+
+require 'trollop'
+require 'smart_colored/extend'
+
+include Adept
+
+#Add some separation before and after the output, to make it more visible.
+puts
+at_exit { puts }
+
+#
+#Output a formatted warning message.
+#
+def warn(message)
+  puts message.yellow
+end
+
+#
+#Output a formatted error message.
+#
+def error(message, title="Oops!")
+  puts "#{title.bold} #{message}".red
+end
+
+#
+# Output a formatted error message, and quit.
+#
+def fatal_error(message, title="Oops!")
+  error "#{message}", title
+  exit
+end
+
+#
+# Get the currently connected device.
+#
+def get_target_connection(opts={})
+
+  #Ensure that we have a plugged-in board.
+  fatal_error "It doesn't look like there's a Digilent board plugged in, on or off." if Device::connected_devices.empty? 
+
+  #By default, use the first connected device.
+  device = Device::open_first_connected_device
+  at_exit { device.close }
+
+  #If the device doesn't support JTAG, we can't program it.
+  fatal_error "This device isn't supported." unless device.supported_connections.include?(JTAG::Connection)
+
+  jtag = JTAG::Connection.new(device)
+  fatal_error "The power switch is off on your connected board! Turn it on, and try again." if jtag.connected_devices.empty?
+
+  jtag
+
+end
+
+#
+# Get the target file.
+# 
+def get_target_file(opts={})
+
+  #If a file was provided on the command line, use it.
+  file = ARGV.shift if ARGV
+
+  #Attempt to determine the target file automagically.
+  unless file
+
+    #Attempt to determine the file.
+    file = ISE::ProjectNavigator::most_recent_project.bit_file
+    fatal_error "You didn't specify a file to program, and I couldn't figure out a likely candidate.\n      Perhaps you still need to generate a programming file?"  unless file
+
+    #And warn the user of the file we chose.
+    warn "You didn't specify a file to program, so I assumed you wanted me to program:"
+    puts "#{File::dirname(file)}/#{File::basename(file).bold}"
+
+  end
+
+  fatal_error "The file you asked me to program doesn't seem to exist." unless File::exists?(file)
+
+  #Return the ascertained file.
+  file
+
+end
+
+def configure_fpga(jtag, bitfile_path)
+
+  #Find the first connected FPGA.
+  fpga = jtag.connected_devices.find { |device| device.is_a? JTAG::Devices::FPGA }
+  fatal_error "This board doesn't feature a supported FPGA!" unless fpga
+
+  #Get the bit-file in question.
+  bitstream = Adept::DataFormats::Bitstream.from_file(bitfile_path)
+  fpga.configure(bitstream)
+
+end
+
+connection = get_target_connection
+file = get_target_file
+
+begin
+  configure_fpga(connection, file)
+rescue Error => e
+  puts
+  fatal_error e.message
+end
+
+
+

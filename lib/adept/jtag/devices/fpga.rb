@@ -15,7 +15,7 @@ module Adept
        
         #Basic device definitions.
         InstructionWidth = 6
-        supports_idcode "X1c1a093"
+        supports_idcode "X1c1a093", "X1c10093"
 
         #Supported boundary-scan instructions.
         Instructions = \
@@ -41,6 +41,14 @@ module Adept
           :isc_disable => 0b010110
         }
 
+        #Database which maps IDCodes to bit-file part numbers.
+        #Used to validate 
+        PartIdcodes = \
+        {
+          '3s100ecp132' => 'X1c10093',
+          '3s250ecp132' => 'X1c1a093'
+        }
+
         ConfigurationStartup = 14_000
         FPGAStartup = 100
 
@@ -53,10 +61,10 @@ module Adept
           self.instruction = :idcode
 
           #And attempt to retrieve the 32-bit IDcode.
-          idcode = receive_data(32).reverse
+          id_code = receive_data(32).reverse
 
           #If the two IDcodes don't match, raise an error.
-          raise JTAG::Error, "IDCode verification failed! Expected: #{@idcode.unpack("H*")}, receieved #{idcode.unpack("H*")}. " unless idcode == @idcode
+          raise JTAG::Error, "IDCode verification failed! Expected: #{@idcode.unpack("H*")}, receieved #{id_code.unpack("H*")}. " unless id_code == @idcode
 
         end
 
@@ -81,6 +89,8 @@ module Adept
         #
         def configure(bitstream)
 
+          validate_bitstream(bitstream)
+
           #Send the bitstream to the FPGA.
           initialize_configuration
           transmit_data(bitstream.to_s)
@@ -93,7 +103,29 @@ module Adept
 
         end
 
+        def part_name
+          connected_part, _ = PartIdcodes.find { |part, mask| self.class.idcode_matches_mask(mask, @idcode) }
+          connected_part
+        end
+
+        #
+        # Returns true iff the provided bitstream is intended for this FPGA.
+        #
+        def supports_bitstream?(bitstream)
+          self.class.idcode_matches_mask(PartIdcodes[bitstream.part], @idcode)
+        end
+
+
         private
+
+        #
+        # Check to ensure that the provided bit-stream is intended for this part.
+        #
+        def validate_bitstream(bitstream)
+          unless supports_bitstream?(bitstream)
+            raise ProgrammingError, "The provided bitstream was intended for an '#{bitstream.part}', but a '#{part_name}' is connected."
+          end
+        end
 
         #
         # Performs the initial steps which ready the FPGA for configuration.
