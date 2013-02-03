@@ -68,7 +68,12 @@ def get_target_file(opts={})
   unless file
 
     #Attempt to determine the file.
-    file = ISE::ProjectNavigator::most_recent_project.bit_file
+    begin
+      file = ISE::ProjectNavigator::most_recent_project.bit_file
+    rescue
+      file = nil
+    end
+
     fatal_error "You didn't specify a file to program, and I couldn't figure out a likely candidate.\n      Perhaps you still need to generate a programming file?"  unless file
 
     #And warn the user of the file we chose.
