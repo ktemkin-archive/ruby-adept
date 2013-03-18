@@ -1,0 +1,9 @@
+name: ATMega103-compatible AVR
+targets: 
+
+  #Spartan 3E 250K-gate
+  3s250ecp132:
+    bit_file: avr_250k.bit
+    memory_map: avr_250k.bmm
+    
+  

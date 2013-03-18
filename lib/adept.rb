@@ -9,3 +9,4 @@ require 'adept/connection_provider'
 require 'adept/jtag'
 
 require 'adept/boards'
+require 'adept/core'
